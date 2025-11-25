@@ -37,7 +37,7 @@ ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("dark-blue")
 
 # --- SABİT AYARLAR ---
-APP_VERSION = "v14.5 DYNAMIC EDITION" 
+APP_VERSION = "v14.9 DYNAMIC EDITION" 
 
 # GÜNCELLEME LİNKLERİ
 UPDATE_URL = "https://raw.githubusercontent.com/ledoo75/StokTakip/refs/heads/main/main.py"
