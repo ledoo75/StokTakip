@@ -37,14 +37,8 @@ ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("dark-blue")
 
 # --- SABİT AYARLAR ---
-APP_VERSION = "v14.1 DYNAMIC EDITION" 
-
-# 1. PYTHON KODU İÇİN GÜNCELLEME LİNKİ:
+APP_VERSION = "v14.5 AI CHAT EDITION" 
 UPDATE_URL = "https://raw.githubusercontent.com/ledoo75/StokTakip/refs/heads/main/main.py"
-
-# 2. WINDOWS EXE İÇİN GÜNCELLEME LİNKİ (DİKKAT: Burası GitHub'daki EXE dosyanızın linki olmalı)
-# Örnek: https://github.com/kullanici/repo/raw/main/TanjuPaletPro.exe
-EXE_UPDATE_URL = "https://github.com/ledoo75/StokTakip/raw/main/TanjuPaletPro.exe" 
 
 DEFAULT_DEPOTS = ["ANTREPO", "ANTREPO 2", "ZAFER", "KARE 6"]
 
@@ -62,7 +56,9 @@ COLORS = {
     "border": "#374151",
     "critical": "#FF0000",
     "makbule_btn": "#D946EF", 
-    "makbule_chat": "#4C1D95" 
+    "makbule_chat": "#4C1D95",
+    "chat_other": "#374151", 
+    "chat_me": "#0EA5E9"     
 }
 
 FONTS = {
@@ -79,131 +75,74 @@ if not os.path.exists(program_folder): os.makedirs(program_folder, exist_ok=True
 CONFIG_FILE = os.path.join(program_folder, "config.json")
 DEFAULT_DB_PATH = os.path.join(program_folder, "database_v14.db")
 
-# ================== GELİŞMİŞ MAKBULE BEYNİ ==================
+# ================== ULTRA GELİŞMİŞ MAKBULE BEYNİ ==================
 class MakbuleBrain:
     def __init__(self):
-        self.context = {} 
+        self.jokes = [
+            "Turgay bir gün palet sayıyormuş, uyuya kalmış. Neden? Çünkü koyun yerine palet saymış.",
+            "İki palet yolda karşılaşmış, biri demiş ki 'Beni taşıyabilir misin?', diğeri 'Yok ben zaten doluyum' demiş.",
+            "Bilgisayar mühendisi ekmek almaya giderse ne alır? 1 (bir) ekmek.",
+            "Tanju Bey'in en sevdiği müzik grubu kim? 'Palet' ve Orkestrası."
+        ]
         
-    def get_welcome_message(self, user):
-        user = user.lower()
-        if "turgay" in user:
-            msgs = [
-                "Turgay... Yine geldin. Veritabanı yoruluyor sen gelince.",
-                "Turgay, lütfen bugün yanlış tuşlara basma, temizlemekten yoruldum.",
-                "Turgay Bey! Stokları saymayı öğrendik mi yoksa yine bana mı soracaksın?"
-            ]
-        elif "kübra" in user:
-            msgs = [
-                "Kübra, Excel tablolarını kapatıp bana odaklanabilirsin.",
-                "Hoş geldin Kübra. Kahveni aldıysan dedikoduya değil işe başla.",
-                "Kübra, bugün çok soru sorma, işlemcim kaldırmıyor."
-            ]
-        elif "tanju" in user:
-            msgs = [
-                "Ooo Tanju Başkan! Dükkan senin ama şifreler bende, unutma.",
-                "Tanju Bey, kasayı saydıysanız depoya bir göz atalım.",
-                "Patron geldi, herkes (ben hariç) ayağa kalksın!"
-            ]
-        elif "eyüp" in user:
-            msgs = [
-                "Eyüp... Yine sessizce geldin. Varlığınla yokluğun bir.",
-                "Eyüp, verileri bozmadan usulca izle sadece.",
-                "Eyüp Bey, bugün konuşacak mısınız yoksa yine bakışacak mıyız?"
-            ]
-        else:
-            msgs = [
-                f"{user.capitalize()}, hoş geldin. Umarım beni yormazsın.",
-                "Sistem aktif, zeka seviyesi yüksek (benden dolayı). Sen nasılsın?",
-                "Ben Makbule. Buranın beyniyim. Sen de kas gücüsün sanırım?"
-            ]
-        return random.choice(msgs)
+    def analyze_command(self, text, user, db_context):
+        text = text.lower()
+        
+        # Matematik
+        math_result = self.calculate_math(text)
+        if math_result and any(x in text for x in ['+', '-', '*', '/', 'kaç', 'hesapla']):
+            return f"🧮 Hesapladım canım: {math_result}"
+
+        # Veritabanı (Stok)
+        if "stok" in text or "durum" in text:
+            return self.get_stock_summary(db_context)
+
+        # Eğlence Komutları
+        if "zar" in text:
+            return f"🎲 Zar attım: {random.randint(1, 6)} geldi."
+        if "yazı" in text and "tura" in text:
+            return f"🪙 Para havada... {random.choice(['YAZI', 'TURA'])} geldi!"
+        if "şaka" in text or "fıkra" in text:
+            return f"🤡 {random.choice(self.jokes)}"
+        
+        # Kişiye Özel (Laf Sokma)
+        if "turgay" in user.lower():
+            return "Turgay, yine mi sen? Depoda işler bitti mi de sohbettesin?"
+        if "kübra" in user.lower():
+            return "Kübra, o kahveyi bırak ve excel tablolarına dön."
+        
+        # Genel Cevaplar
+        if "nasılsın" in text or "naber" in text: return "Sistemlerim ısınıyor ama idare ediyoruz. Sen nasılsın?"
+        if "günaydın" in text: return "Günaydın! Stoklar bizi bekler."
+        if "mail" in text: return "ACTION_MAIL"
+        if "güncelle" in text: return "ACTION_UPDATE"
+        if "selam" in text or "merhaba" in text: return "Selamlar, hoş geldiniz."
+
+        # Anlaşılmayan durumlar için rastgele cevap
+        roasts = [
+            "Efendim canım? Ne dedin anlamadım.",
+            "Benden bahsettiğini duydum, ne istiyorsun?",
+            "Makbule aşağı, Makbule yukarı... Söyle bakalım.",
+            "Adımı andın, geldim. Buyur?"
+        ]
+        return random.choice(roasts)
 
     def calculate_math(self, text):
         try:
             expression = re.sub(r'[^0-9+\-*/().]', '', text)
             if not expression: return None
-            result = eval(expression)
-            
-            comments = [
-                f"Bunu bile hesaplayamıyor musun? Cevap: {result}",
-                f"Hesap makinesi miyim ben? Al bakalım: {result}",
-                f"Turgay olsa parmakla sayardı... Cevap: {result}",
-                f"Sonuç: {result}. Bir daha sorma."
-            ]
-            return random.choice(comments)
-        except:
-            return None
+            return eval(expression)
+        except: return None
 
-    def analyze_command(self, text, user, db_context):
-        text = text.lower()
-        user = user.lower()
-
-        math_result = self.calculate_math(text)
-        if math_result and any(x in text for x in ['+', '-', '*', '/', 'kaç', 'hesapla']):
-            return math_result
-
+    def get_stock_summary(self, db_path):
         try:
-            conn = sqlite3.connect(db_context)
-            c = conn.cursor()
-            
-            depots = [r[0] for r in c.execute("SELECT name FROM depots").fetchall()]
-            for depot in depots:
-                if depot.lower() in text:
-                    count = c.execute("SELECT count FROM depots WHERE name=?", (depot,)).fetchone()[0]
-                    conn.close()
-                    return f"📦 {depot} deposuna baktım, {count} adet mal var. " + ("Hala bitmemiş." if count > 0 else "Bomboş! Fareler cirit atıyor.")
-
-            if "stok" in text or "durum" in text or "tüm" in text or "hepsi" in text:
-                rows = c.cursor().execute("SELECT name, count FROM depots").fetchall()
-                conn.close()
-                resp = "Üşenmedim saydım, al bakalım:\n\n"
-                total = 0
-                for r in rows:
-                    resp += f"🔹 {r[0]}: {r[1]}\n"
-                    total += r[1]
-                return resp + f"\nTOPLAM: {total} Adet. " + ("Zenginiz!" if total > 1000 else "Batıyoruz galiba.")
-
+            conn = sqlite3.connect(db_path)
+            rows = conn.cursor().execute("SELECT name, count FROM depots").fetchall()
             conn.close()
-        except Exception as e:
-            return f"Veritabanına bağlanırken başım döndü. Hata: {e}"
-
-        if "mail" in text or "gönder" in text:
-            return "ACTION_MAIL"
-        
-        if "güncelle" in text:
-            return "ACTION_UPDATE"
-
-        if "saat" in text or "zaman" in text:
-            now = datetime.now().strftime("%H:%M")
-            return f"Saat {now}. Mesai bitimine daha çok var, çalışmaya devam."
-            
-        elif "nasılsın" in text or "naber" in text:
-            return "İşlemcim ısınıyor, veritabanı şişmiş, Turgay yine hata yapmış... Harikayım yani!"
-            
-        elif "günaydın" in text:
-            return "Günaydın. Kahveni içtiysen sisteme giriş yap, beni bekletme."
-            
-        elif "teşekkür" in text or "sağol" in text:
-            return "Rica ederim. Maaşıma zam yapın yeter."
-            
-        elif "adın ne" in text or "kimsin" in text:
-            return "Adım Makbule. Bu sistemin kalbiyim, beyniyim, her şeyiyim."
-        
-        elif "turgay" in text: 
-            return "Turgay'dan bahsetme bana, geçen gün yanlışlıkla tüm logları siliyordu az kalsın."
-            
-        elif "patron" in text or "tanju" in text:
-            return "Tanju Bey duyarsa ikimizi de kovar, dikkatli konuş."
-
-        else:
-            roasts = [
-                "Ne dediğini anlamadım. Klavyeye mi oturdun?",
-                "Türkçe karakter kullanmayı dene, ya da derdini Turgay'a anlat.",
-                "Bu komutu işlemem için beynimi 'düşük mod'a almam lazım, bekle...",
-                "Boş yapma, stok gir.",
-                "Canım sıkkın, git başkasına sor."
-            ]
-            return random.choice(roasts)
+            msg = "📦 GÜNCEL STOKLAR:\n"
+            for n, c in rows: msg += f"- {n}: {c}\n"
+            return msg
+        except: return "Veritabanına erişemedim."
 
 MAKBULE = MakbuleBrain()
 
@@ -286,7 +225,8 @@ class DB:
             c.execute("CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY, date TEXT, action TEXT, depot TEXT, qty INTEGER, user TEXT)")
             c.execute("CREATE TABLE IF NOT EXISTS users (name TEXT PRIMARY KEY, pass TEXT, role TEXT DEFAULT 'personel')")
             c.execute("CREATE TABLE IF NOT EXISTS system_vars (key TEXT PRIMARY KEY, value TEXT)")
-            
+            c.execute("CREATE TABLE IF NOT EXISTS chat_logs (id INTEGER PRIMARY KEY, user TEXT, message TEXT, timestamp TEXT)")
+
             for d in DEFAULT_DEPOTS:
                 c.execute("INSERT OR IGNORE INTO depots (name, count) VALUES (?, 0)", (d,))
             
@@ -347,7 +287,7 @@ class AnimatedSplash(ctk.CTk):
 
     def run(self):
         DB.init()
-        steps = ["Veritabanı bağlanıyor...", "Kullanıcılar kontrol ediliyor...", "Arayüz yükleniyor...", "Hazır!"]
+        steps = ["Veritabanı bağlanıyor...", "Kullanıcılar kontrol ediliyor...", "Sohbet sunucusu hazırlanıyor...", "Hazır!"]
         for i in range(101):
             self.bar.set(i/100)
             if i % 25 == 0 and i < 100: self.info.configure(text=steps[int(i/25)])
@@ -438,6 +378,8 @@ class MainApp(ctk.CTk):
 
         self.active_depots = DB.get_all_depots()
         self.animation_running = False
+        self.chat_active = False 
+        self.last_chat_id = 0    
         self.critical_widgets = []
 
         self.grid_columnconfigure(1, weight=1)
@@ -538,7 +480,7 @@ class MainApp(ctk.CTk):
         self.create_nav("🔄  OPERASYON & DEPO", self.show_ops, "ops")
         self.create_nav("📝  GEÇMİŞ & FİLTRE", self.show_history, "hist")
         self.create_nav("📈  RAPOR MERKEZİ", self.show_reports, "report")
-        self.create_nav("🤖  MAKBULE ASİSTAN", self.show_makbule, "makbule")
+        self.create_nav("💬  SOHBET & MAKBULE", self.show_makbule, "makbule")
         
         if self.role == "admin":
             self.create_nav("🔒  KULLANICI YÖNETİMİ", self.show_users, "users")
@@ -565,44 +507,102 @@ class MainApp(ctk.CTk):
 
     def clear_main(self):
         self.animation_running = False
+        self.chat_active = False 
         self.critical_widgets = []
         for w in self.main.winfo_children(): w.destroy()
     
     def refresh_app_data(self): self.active_depots = DB.get_all_depots()
 
-    # ================== MAKBULE EKRANI ==================
+    # ================== ORTAK SOHBET VE MAKBULE EKRANI ==================
     def show_makbule(self):
         self.clear_main(); self.active_nav("makbule")
+        self.chat_active = True 
+        
         header = ctk.CTkFrame(self.main, fg_color="transparent"); header.pack(fill="x", pady=(0, 20))
-        ctk.CTkLabel(header, text="MAKBULE ASİSTAN", font=FONTS["h2"], text_color=COLORS["makbule_btn"]).pack(side="left")
-        self.chat_frame = ctk.CTkScrollableFrame(self.main, fg_color=COLORS["card"], corner_radius=20, height=400); self.chat_frame.pack(fill="both", expand=True, pady=10)
-        self.add_chat_bubble(MAKBULE.get_welcome_message(self.user), "makbule")
+        ctk.CTkLabel(header, text="💬 EKİP SOHBETİ & MAKBULE", font=FONTS["h2"], text_color=COLORS["makbule_btn"]).pack(side="left")
+        
+        self.chat_frame = ctk.CTkScrollableFrame(self.main, fg_color=COLORS["card"], corner_radius=20, height=400)
+        self.chat_frame.pack(fill="both", expand=True, pady=10)
+        
         input_frame = ctk.CTkFrame(self.main, fg_color="transparent"); input_frame.pack(fill="x", pady=10)
-        self.chat_entry = ctk.CTkEntry(input_frame, placeholder_text="Örn: 'zafer stok', 'mail at'...", height=50, font=("Arial", 14)); self.chat_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
-        self.chat_entry.bind("<Return>", lambda e: self.ask_makbule())
-        ctk.CTkButton(input_frame, text="GÖNDER", width=100, height=50, fg_color=COLORS["makbule_btn"], text_color="white", command=self.ask_makbule).pack(side="right")
+        self.chat_entry = ctk.CTkEntry(input_frame, placeholder_text="Mesaj yaz... (Makbule ismi geçerse cevap verir)", height=50, font=("Arial", 14))
+        self.chat_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.chat_entry.bind("<Return>", lambda e: self.send_chat_message())
+        
+        ctk.CTkButton(input_frame, text="GÖNDER", width=100, height=50, fg_color=COLORS["makbule_btn"], text_color="white", command=self.send_chat_message).pack(side="right")
 
-    def ask_makbule(self):
+        self.load_chat_history()
+        self.refresh_chat_loop()
+
+    def load_chat_history(self):
+        try:
+            conn = DB.get_conn()
+            cursor = conn.cursor()
+            rows = cursor.execute("SELECT id, user, message, timestamp FROM chat_logs ORDER BY id DESC LIMIT 50").fetchall()
+            conn.close()
+            for r in reversed(rows):
+                self.last_chat_id = max(self.last_chat_id, r[0])
+                self.add_chat_bubble(r[2], r[1], r[3])
+        except: pass
+
+    def refresh_chat_loop(self):
+        if not self.chat_active: return
+        try:
+            conn = DB.get_conn()
+            cursor = conn.cursor()
+            rows = cursor.execute("SELECT id, user, message, timestamp FROM chat_logs WHERE id > ? ORDER BY id ASC", (self.last_chat_id,)).fetchall()
+            conn.close()
+            for r in rows:
+                self.last_chat_id = r[0]
+                self.add_chat_bubble(r[2], r[1], r[3])
+        except: pass
+        self.after(2000, self.refresh_chat_loop)
+
+    def send_chat_message(self):
         msg = self.chat_entry.get().strip()
         if not msg: return
-        self.add_chat_bubble(msg, "user"); self.chat_entry.delete(0, "end")
-        self.main.after(500, lambda: self.process_makbule_response(msg))
+        timestamp = datetime.now().strftime("%H:%M")
+        try:
+            conn = DB.get_conn()
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO chat_logs (user, message, timestamp) VALUES (?, ?, ?)", (self.user, msg, timestamp))
+            conn.commit()
+            conn.close()
+            self.chat_entry.delete(0, "end")
+            
+            # --- YENİ TETİKLEYİCİ: İsim geçince (küçük büyük harf fark etmeksizin) ---
+            if "makbule" in msg.lower() or "!zar" in msg or "!şaka" in msg:
+                self.trigger_makbule(msg)
+                
+        except Exception as e: print(f"Mesaj hatası: {e}")
 
-    def process_makbule_response(self, msg):
-        response = MAKBULE.analyze_command(msg, self.user, CURRENT_DB_PATH)
-        if response == "ACTION_MAIL":
-            self.add_chat_bubble("Tamam be, atıyorum maili...", "makbule"); self.send_auto_email()
-            response = "Mail gönderildi."
-        elif response == "ACTION_UPDATE":
-            self.add_chat_bubble("Güncelleme kontrol ediliyor...", "makbule"); self.check_web_update(); return
-        self.add_chat_bubble(response, "makbule")
+    def trigger_makbule(self, user_msg):
+        response = MAKBULE.analyze_command(user_msg, self.user, CURRENT_DB_PATH)
+        timestamp = datetime.now().strftime("%H:%M")
+        if response == "ACTION_MAIL": self.send_auto_email(); response = "📧 Tamamdır, maili gönderdim!"
+        elif response == "ACTION_UPDATE": self.check_web_update(); return 
+        time.sleep(0.5) 
+        try:
+            conn = DB.get_conn()
+            conn.cursor().execute("INSERT INTO chat_logs (user, message, timestamp) VALUES (?, ?, ?)", ("Makbule", response, timestamp))
+            conn.commit(); conn.close()
+        except: pass
 
-    def add_chat_bubble(self, text, sender):
-        align = "e" if sender == "user" else "w"
-        bg = COLORS["accent"] if sender == "user" else COLORS["makbule_chat"]
-        fg = "black" if sender == "user" else "white"
-        bubble = ctk.CTkLabel(self.chat_frame, text=text, fg_color=bg, text_color=fg, corner_radius=15, padx=15, pady=10, wraplength=600, justify="left", font=("Arial", 14))
-        bubble.pack(anchor=align, pady=5, padx=10)
+    def add_chat_bubble(self, text, sender, time_str):
+        is_me = sender == self.user
+        is_makbule = sender == "Makbule"
+        align = "e" if is_me else "w"
+        if is_me: bg_color = COLORS["chat_me"]; text_color = "white"
+        elif is_makbule: bg_color = COLORS["makbule_chat"]; text_color = "white"
+        else: bg_color = COLORS["chat_other"]; text_color = "white"
+        
+        container = ctk.CTkFrame(self.chat_frame, fg_color="transparent")
+        container.pack(anchor=align, pady=5, padx=10)
+        if not is_me:
+            name_lbl = ctk.CTkLabel(container, text=f"{sender} - {time_str}", font=("Arial", 10), text_color="gray")
+            name_lbl.pack(anchor="w")
+        bubble = ctk.CTkLabel(container, text=text, fg_color=bg_color, text_color=text_color, corner_radius=15, padx=15, pady=10, wraplength=500, justify="left", font=("Arial", 14))
+        bubble.pack()
         self.chat_frame._parent_canvas.yview_moveto(1.0)
 
     # --- 1. DASHBOARD ---
@@ -915,15 +915,13 @@ class MainApp(ctk.CTk):
         try:
             context = ssl._create_unverified_context()
             
-            # 1. EĞER EXE OLARAK ÇALIŞIYORSA (Windows)
             if getattr(sys, 'frozen', False):
                 exe_path = sys.executable
                 exe_dir = os.path.dirname(exe_path)
                 new_exe_path = os.path.join(exe_dir, "new_update.tmp")
                 
-                # Yeni Exe'yi İndir
                 ToastNotification(self, "Exe indiriliyor...", COLORS["warning"])
-                self.update() # Arayüzü güncelle
+                self.update()
                 
                 try:
                     urllib.request.urlretrieve(EXE_UPDATE_URL, new_exe_path)
@@ -931,12 +929,10 @@ class MainApp(ctk.CTk):
                     messagebox.showerror("İndirme Hatası", f"Dosya indirilemedi:\n{e}")
                     return
 
-                # İndirme tamam mı kontrol et
                 if not os.path.exists(new_exe_path) or os.path.getsize(new_exe_path) < 1000:
                     messagebox.showerror("Hata", "İndirilen dosya bozuk veya eksik.")
                     return
 
-                # Bat Dosyası Oluştur (TIRNAK İŞARETLERİ EKLENDİ)
                 bat_path = os.path.join(exe_dir, "update.bat")
                 exe_name = os.path.basename(exe_path)
                 
@@ -949,12 +945,9 @@ start "" "{exe_name}"
 del "%~f0"
 """
                 with open(bat_path, "w") as f: f.write(bat_content)
-                
-                # --- BURASI DEĞİŞTİ: OS.STARTFILE KULLANILDI ---
                 os.startfile(bat_path)
                 sys.exit()
 
-            # 2. EĞER PYTHON KODU OLARAK ÇALIŞIYORSA
             else:
                 new_code = urllib.request.urlopen(UPDATE_URL, context=context).read()
                 if not new_code: raise ValueError
@@ -965,7 +958,6 @@ del "%~f0"
         except Exception as e:
             messagebox.showerror("Güncelleme Hatası", f"Hata:\n{e}\n\nLütfen internet bağlantınızı kontrol edin.")
 
-    # ... (show_users ve diğerleri aynı)
     def show_users(self):
         self.clear_main(); self.active_nav("users")
         fr = ctk.CTkFrame(self.main); fr.pack(fill="both", expand=True, padx=20, pady=20)
@@ -983,7 +975,6 @@ del "%~f0"
         ctk.CTkButton(pnl, text="TEMİZLE", fg_color="gray", command=self.clear_user_form).pack(pady=15)
         self.refresh_users()
 
-    # ... (Yardımcı Fonksiyonlar)
     def toggle_password(self):
         if self.show_pass_var.get(): self.u_pass.configure(show="")
         else: self.u_pass.configure(show="•")
