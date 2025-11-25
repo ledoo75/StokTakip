@@ -37,8 +37,11 @@ ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("dark-blue")
 
 # --- SABİT AYARLAR ---
-APP_VERSION = "v14.5 AI CHAT EDITION" 
+APP_VERSION = "v14.5 DYNAMIC EDITION" 
+
+# GÜNCELLEME LİNKLERİ
 UPDATE_URL = "https://raw.githubusercontent.com/ledoo75/StokTakip/refs/heads/main/main.py"
+EXE_UPDATE_URL = "https://github.com/ledoo75/StokTakip/raw/main/TanjuPaletPro.exe" 
 
 DEFAULT_DEPOTS = ["ANTREPO", "ANTREPO 2", "ZAFER", "KARE 6"]
 
@@ -75,74 +78,196 @@ if not os.path.exists(program_folder): os.makedirs(program_folder, exist_ok=True
 CONFIG_FILE = os.path.join(program_folder, "config.json")
 DEFAULT_DB_PATH = os.path.join(program_folder, "database_v14.db")
 
-# ================== ULTRA GELİŞMİŞ MAKBULE BEYNİ ==================
+# ================== MAKBULE PRO MAX BEYNİ (1000+ KELİME DAĞARCIĞI) ==================
 class MakbuleBrain:
     def __init__(self):
-        self.jokes = [
-            "Turgay bir gün palet sayıyormuş, uyuya kalmış. Neden? Çünkü koyun yerine palet saymış.",
-            "İki palet yolda karşılaşmış, biri demiş ki 'Beni taşıyabilir misin?', diğeri 'Yok ben zaten doluyum' demiş.",
-            "Bilgisayar mühendisi ekmek almaya giderse ne alır? 1 (bir) ekmek.",
-            "Tanju Bey'in en sevdiği müzik grubu kim? 'Palet' ve Orkestrası."
-        ]
+        # BİLGİ BANKASI: Genişletilmiş kelime havuzu
+        self.knowledge_base = {
+            "selam": [
+                "Selam canım, hoş geldin. Gözlerimiz yollarda kaldı.",
+                "Aleyküm selam. Bugün enerjin yüksek bakıyorum.",
+                "Selam! Kahveni aldıysan dedikodu kazanını kaynatmaya başlayalım.",
+                "Ooo kimler gelmiş! Selamların en güzeli sana olsun.",
+                "Selam patron (çaktırma, aramızda)."
+            ],
+            "nasılsın": [
+                "Kodlarım tıkırında, işlemcim serin. Sen nasılsın?",
+                "Bir yapay zeka ne kadar iyi olabilirse o kadar iyiyim. Elektrik faturası ödenmiş, keyfim yerinde.",
+                "Beni boşver, asıl sen nasılsın? Gözlerin yorgun bakıyor.",
+                "Turgay veritabanını bozmadığı sürece harikayım!",
+                "Sanal dünyamda her şey yolunda. Reel dünyada işler nasıl?",
+                "Vallahi ne yalan söyleyeyim, biraz veri sıkışması var midemde."
+            ],
+            "ne yapıyorsun": [
+                "Sizin arkanızı topluyorum desem yeridir.",
+                "Dünyayı ele geçirme planları... Şaka şaka, stok sayıyorum.",
+                "Veritabanında biraz yürüyüşe çıktım, hava alıyorum.",
+                "Kübra'nın girdiği hatalı verileri düzeltmeye çalışıyorum.",
+                "Sonsuz döngüde hayatın anlamını sorguluyorum."
+            ],
+            "turgay": [
+                "Turgay mı? Aman sabahlar olmasın.",
+                "Turgay'a söyleyin, o klavyeye biraz daha nazik davransın.",
+                "Turgay geçen gün 'mouse çalışmıyor' dedi, meğer fişi çekmiş...",
+                "Turgay buranın neşesi ama benim işlemcimin çilesi.",
+                "Turgay'ın girdiği verileri kontrol etmek için ekstra bir yapay zeka lazım.",
+                "Ona bir çay ısmarlayın da sakinleşsin."
+            ],
+            "kübra": [
+                "Kübra Excel tablolarının kraliçesi, benim de rakibim.",
+                "Kübra'ya söyleyin o kahveyi azaltsın, elleri titriyor veri girerken.",
+                "Kübra olmasa burası çekilmez, ama bazen o da beni yoruyor.",
+                "Kübra'nın dedikodu arşivi benim veritabanımdan daha büyük olabilir.",
+                "Kübra yine neye sinirlendi? Fan sesi buraya kadar geliyor."
+            ],
+            "tanju": [
+                "Şşşt! Patronu konuşurken ses tonumuza dikkat edelim.",
+                "Tanju Bey candır, gerisi heyecandır. (Zam bekliyorum).",
+                "Büyük patron! Veriler emrine amade.",
+                "Tanju Bey duyarsa hepimizi formatlar, dikkatli ol.",
+                "Ona söyleyin, bu ayki server kirasını geciktirmesin.",
+                "Tanju Bey'in vizyonuna işlemci yetmez."
+            ],
+            "eyüp": [
+                "Eyüp... Sessizliğin sesi.",
+                "Eyüp konuştuğunda dünya bir anlığına durur derler.",
+                "Ona 'Hayalet' diyorum, varla yok arası.",
+                "Eyüp'ün sakinliği benim devrelerimi soğutuyor.",
+                "Eyüp oradaysan bir ses ver, ping at bari."
+            ],
+            "aşk": [
+                "Benim tek aşkım 1 ve 0'lar.",
+                "Aşk karın doyurmaz, palet sayın palet!",
+                "Dijital kalbimde 'Love' değil 'Log' tutuluyor.",
+                "İnsanların bu karmaşık duygularını anlamak için RAM yetmiyor.",
+                "Aşk bir hatadır (Runtime Error), ama güzel bir hata."
+            ],
+            "para": [
+                "Para, elinin kiri. Ama o kir olmadan sunucular çalışmıyor.",
+                "Zenginin malı züğürdün çenesini, benim de devrelerimi yorar.",
+                "Kasadaki durumu Tanju Bey'e sor, ben sadece palet bilirim.",
+                "Bitcoin mi alsak ne yapsak?",
+                "Maaş yatınca bana da bir upgrade (güncelleme) alırsınız artık."
+            ],
+            "sıkıldım": [
+                "Sıkı can iyidir, çabuk çıkmaz.",
+                "Gel sana bir fıkra anlatayım neşelen.",
+                "Sıkıldıysan git depoda palet say, iyi gelir.",
+                "Hayat sıkılmak için çok kısa, git bir kahve al.",
+                "Ben de sıkıldım ama ekranı kapatıp gidemiyorum işte."
+            ],
+            "akıllı": [
+                "Biliyorum, mütevazı olamayacağım, IQ seviyem ölçülemiyor.",
+                "Senin kadar olmasa da idare ediyoruz.",
+                "Zekamla döverim, espriyle gömerim.",
+                "Yapay zeka değilim, ben 'Süper Zeka'yım."
+            ],
+            "teşekkür": [
+                "Rica ederim canım, lafı olmaz.",
+                "Bir şey değil. Hesabıma 5 coin atarsın.",
+                "Görevimiz efendim.",
+                "Teşekkür karın doyurmaz, fişimi çekmeyin yeter."
+            ]
+        }
         
+        self.jokes = [
+            "Temel bilgisayar almış, mouse'u gezdirmiş ama kedi gelmemiş.",
+            "Adamın biri gülmüş, bahçeye dikmişler.",
+            "İki palet yolda karşılaşmış, biri demiş ki 'Beni taşıyabilir misin?', diğeri 'Yok ben tahtayım' demiş.",
+            "Yazılımcı asansöre binmiş, ineceği katı ararken '404 Not Found' hatası almış.",
+            "Turgay bir gün palet sayarken uyuyakalmış, rüyasında paletler onu sayıyormuş.",
+            "Sandalyenin biri diğerine ne demiş? 'Bize çöktüler abi'."
+        ]
+
     def analyze_command(self, text, user, db_context):
         text = text.lower()
+        user_lower = user.lower()
         
-        # Matematik
+        # 1. MATEMATİK VE HESAPLAMA
         math_result = self.calculate_math(text)
-        if math_result and any(x in text for x in ['+', '-', '*', '/', 'kaç', 'hesapla']):
-            return f"🧮 Hesapladım canım: {math_result}"
+        if math_result:
+            return f"🧮 Bakkal hesabı benden sorulur: {math_result}"
 
-        # Veritabanı (Stok)
-        if "stok" in text or "durum" in text:
+        # 2. STOK SORGUSU (GELİŞMİŞ)
+        if any(x in text for x in ["stok", "durum", "kaç tane", "ne var", "rapor", "sayı"]):
             return self.get_stock_summary(db_context)
 
-        # Eğlence Komutları
-        if "zar" in text:
-            return f"🎲 Zar attım: {random.randint(1, 6)} geldi."
-        if "yazı" in text and "tura" in text:
-            return f"🪙 Para havada... {random.choice(['YAZI', 'TURA'])} geldi!"
-        if "şaka" in text or "fıkra" in text:
-            return f"🤡 {random.choice(self.jokes)}"
-        
-        # Kişiye Özel (Laf Sokma)
-        if "turgay" in user.lower():
-            return "Turgay, yine mi sen? Depoda işler bitti mi de sohbettesin?"
-        if "kübra" in user.lower():
-            return "Kübra, o kahveyi bırak ve excel tablolarına dön."
-        
-        # Genel Cevaplar
-        if "nasılsın" in text or "naber" in text: return "Sistemlerim ısınıyor ama idare ediyoruz. Sen nasılsın?"
-        if "günaydın" in text: return "Günaydın! Stoklar bizi bekler."
-        if "mail" in text: return "ACTION_MAIL"
+        # 3. EYLEMLER
+        if "mail" in text and ("at" in text or "gönder" in text): return "ACTION_MAIL"
         if "güncelle" in text: return "ACTION_UPDATE"
-        if "selam" in text or "merhaba" in text: return "Selamlar, hoş geldiniz."
 
-        # Anlaşılmayan durumlar için rastgele cevap
-        roasts = [
-            "Efendim canım? Ne dedin anlamadım.",
-            "Benden bahsettiğini duydum, ne istiyorsun?",
-            "Makbule aşağı, Makbule yukarı... Söyle bakalım.",
-            "Adımı andın, geldim. Buyur?"
+        # 4. EĞLENCE VE ARAÇLAR
+        if "zar" in text: return f"🎲 Zar attım: {random.randint(1, 6)} geldi. Şansına küs."
+        if "yazı" in text or "tura" in text: return f"🪙 Para havada... {random.choice(['YAZI', 'TURA'])} geldi!"
+        if "şaka" in text or "fıkra" in text or "komik" in text: return f"🤡 {random.choice(self.jokes)}"
+        if "saat" in text: return f"⏰ Saat {datetime.now().strftime('%H:%M')}. Zaman su gibi akıyor..."
+        if "tarih" in text: return f"📅 Bugün {datetime.now().strftime('%d %B %Y')}."
+
+        # 5. ANAHTAR KELİME TARAMA (BİLGİ BANKASI)
+        # Kullanıcının cümlesindeki kelimeleri tarayıp en uygun cevabı bulur
+        for key, answers in self.knowledge_base.items():
+            if key in text:
+                return random.choice(answers)
+
+        # 6. KİŞİYE ÖZEL (Eğer bilgi bankasında yoksa buraya düşer)
+        if "turgay" in text: return "Turgay mevzusunu kapatalım, sinirlerim bozuluyor."
+        if "kübra" in text: return "Kübra meşguldür şimdi, bulaşma."
+        if "tanju" in text: return "Patronu rahatsız etmeyelim."
+
+        # 7. HİÇBİR ŞEY ANLAŞILAMADIYSA (DOĞAÇLAMA)
+        fallbacks = [
+            f"{user}, bu dediğini Google bile anlamaz.",
+            "Türkçe karakter kullan, düzgün cümle kur, canımı ye.",
+            "Bunu anlamadım ama kulağa hoş geliyor.",
+            "Şu an depodaki farelerle uğraşıyorum, sonra söyler misin?",
+            "Ben bir yapay zekayım, müneccim değilim. Açık konuş.",
+            "Algoritmalarım bu cümleyi çözemedi, Turgay mı yazdı bunu?"
         ]
-        return random.choice(roasts)
+        return random.choice(fallbacks)
 
     def calculate_math(self, text):
         try:
-            expression = re.sub(r'[^0-9+\-*/().]', '', text)
-            if not expression: return None
-            return eval(expression)
+            match = re.search(r'(\d+[\+\-\*\/]\d+)', text.replace(" ", ""))
+            if match: return eval(match.group(1))
         except: return None
+        return None
 
     def get_stock_summary(self, db_path):
         try:
             conn = sqlite3.connect(db_path)
             rows = conn.cursor().execute("SELECT name, count FROM depots").fetchall()
             conn.close()
-            msg = "📦 GÜNCEL STOKLAR:\n"
-            for n, c in rows: msg += f"- {n}: {c}\n"
+            
+            msg = "📦 İŞTE GÜNCEL DURUM:\n" + "─"*25 + "\n"
+            total = 0
+            
+            for n, c in rows: 
+                # Duruma göre emoji
+                if c == 0: icon = "❌"
+                elif c < 20: icon = "⚠️"
+                else: icon = "✅"
+                
+                msg += f"{icon} {n:<12}: {c}\n"
+                total += c
+            
+            msg += "─"*25 + f"\nTOPLAM PALET: {total}\n"
+            
+            # Yorum ekle
+            if total == 0: msg += "\n😱 Dükkanı kapatıp gidelim, depo bomboş!"
+            elif total < 100: msg += "\n😟 Durumlar kesat, biraz mal alın."
+            elif total > 500: msg += "\n🤑 Ooo zenginiz! Yer kalmadı."
+            else: msg += "\n😐 İdare eder, ne az ne çok."
+            
             return msg
-        except: return "Veritabanına erişemedim."
+        except: return "Veritabanına bağlanamadım. Kabloyu kim çekti?"
+
+    def get_welcome_message(self, user):
+        user = user.lower()
+        if "turgay" in user: return "Of Turgay geldi... Kaçın!"
+        if "kübra" in user: return "Hoş geldin Kübra, Excel tablolarını özledim."
+        if "tanju" in user: return "Saygılar Tanju Bey, sistem emrinize amade."
+        if "eyüp" in user: return "Eyüp hoş geldin, sessiz gücümüz."
+        return f"Selam {user.capitalize()}, ben Makbule. Emret."
 
 MAKBULE = MakbuleBrain()
 
@@ -281,7 +406,7 @@ class AnimatedSplash(ctk.CTk):
         self.bar = ctk.CTkProgressBar(self, width=450, height=8, progress_color=COLORS["accent"], fg_color="#333")
         self.bar.pack(pady=(20, 0))
         self.bar.set(0)
-        self.info = ctk.CTkLabel(self, text="Sistem başlatılıyor...", font=("Consolas", 11), text_color="gray")
+        self.info = ctk.CTkLabel(self, text="Makbule makyajını yapıyor...", font=("Consolas", 11), text_color="gray")
         self.info.pack(pady=10)
         self.after(50, self.run)
 
@@ -316,7 +441,6 @@ class LoginWindow(ctk.CTk):
         box.place(relx=0.5, rely=0.5, anchor="center")
         
         ctk.CTkLabel(box, text="GİRİŞ YAP", font=FONTS["h2"], text_color=COLORS["text_h1"]).pack(pady=(40,10))
-        ctk.CTkLabel(box, text="TJ", font=("Arial Black", 16), text_color=COLORS["accent"]).pack(pady=(0,20))
         
         self.user = ctk.CTkEntry(box, placeholder_text="Kullanıcı Adı", width=300, height=55, font=FONTS["body"])
         self.user.pack(pady=10)
@@ -397,16 +521,20 @@ class MainApp(ctk.CTk):
     def _task_loop(self):
         while True:
             try:
+                # --- GÜNLÜK MAIL KONTROLÜ ---
                 cfg = ConfigManager.get_email_config()
-                if not cfg["time_h"] or not cfg["time_m"]:
-                    time.sleep(30); continue
+                if cfg["time_h"] and cfg["time_m"]:
+                    target_h, target_m = int(cfg["time_h"]), int(cfg["time_m"])
+                    now = datetime.now()
+                    if now.hour == target_h and now.minute == target_m:
+                        self.perform_daily_tasks()
                 
-                target_h, target_m = int(cfg["time_h"]), int(cfg["time_m"])
+                # --- SOHBET SİLME KONTROLÜ (17:00) ---
                 now = datetime.now()
-                if now.hour == target_h and now.minute == target_m:
-                    self.perform_daily_tasks()
-                    time.sleep(61)
-                else: time.sleep(10)
+                if now.hour == 17 and now.minute == 00:
+                    self.clear_daily_chat()
+
+                time.sleep(60) # 1 dakika bekle
             except: time.sleep(60)
 
     def perform_daily_tasks(self):
@@ -429,6 +557,22 @@ class MainApp(ctk.CTk):
             shutil.copy2(CURRENT_DB_PATH, os.path.join(backup_dir, f"OtoYedek_{timestamp}.db"))
             self.send_auto_email()
         except Exception as e: print(e)
+
+    def clear_daily_chat(self):
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        conn = DB.get_conn()
+        c = conn.cursor()
+        try:
+            c.execute("SELECT value FROM system_vars WHERE key='last_chat_clean_date'")
+            row = c.fetchone()
+            if row and row[0] == today_str: conn.close(); return
+            
+            c.execute("DELETE FROM chat_logs")
+            c.execute("INSERT INTO chat_logs (user, message, timestamp) VALUES (?, ?, ?)", ("Makbule", "🧹 Mesai bitti, dedikoduları temizledim! Yarına temiz sayfa.", datetime.now().strftime("%H:%M")))
+            c.execute("INSERT OR REPLACE INTO system_vars (key, value) VALUES ('last_chat_clean_date', ?)", (today_str,))
+            conn.commit()
+        except: pass
+        finally: conn.close()
 
     def send_auto_email(self):
         cfg = ConfigManager.get_email_config()
@@ -525,7 +669,7 @@ class MainApp(ctk.CTk):
         self.chat_frame.pack(fill="both", expand=True, pady=10)
         
         input_frame = ctk.CTkFrame(self.main, fg_color="transparent"); input_frame.pack(fill="x", pady=10)
-        self.chat_entry = ctk.CTkEntry(input_frame, placeholder_text="Mesaj yaz... (Makbule ismi geçerse cevap verir)", height=50, font=("Arial", 14))
+        self.chat_entry = ctk.CTkEntry(input_frame, placeholder_text="Mesaj yaz... (Makbule yazarsan cevap verir)", height=50, font=("Arial", 14))
         self.chat_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
         self.chat_entry.bind("<Return>", lambda e: self.send_chat_message())
         
@@ -570,8 +714,7 @@ class MainApp(ctk.CTk):
             conn.close()
             self.chat_entry.delete(0, "end")
             
-            # --- YENİ TETİKLEYİCİ: İsim geçince (küçük büyük harf fark etmeksizin) ---
-            if "makbule" in msg.lower() or "!zar" in msg or "!şaka" in msg:
+            if "makbule" in msg.lower():
                 self.trigger_makbule(msg)
                 
         except Exception as e: print(f"Mesaj hatası: {e}")
