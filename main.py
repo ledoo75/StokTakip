@@ -37,7 +37,7 @@ ctk.set_default_color_theme("dark-blue")
 
 # --- ESKİ İSİM VE SÜRÜM GERİ GELDİ ---
 APP_VERSION = "v14.0 DYNAMIC EDITION" 
-UPDATE_URL = "https://raw.githubusercontent.com/SizinKullaniciAdiniz/ProjeAdiniz/main/main.py"
+UPDATE_URL = "https://raw.githubusercontent.com/ledoo75/StokTakip/refs/heads/main/main.py"
 
 DEFAULT_DEPOTS = ["ANTREPO", "ANTREPO 2", "ZAFER", "KARE 6"]
 
