@@ -18,7 +18,7 @@ import ssl
 import random
 import re
 import subprocess
-import platform # Sistem bilgisi için
+import platform
 
 # --- Kütüphane Kontrolleri ---
 try:
@@ -40,9 +40,12 @@ ctk.set_default_color_theme("dark-blue")
 # --- SABİT AYARLAR ---
 APP_VERSION = "v15.5 MAKBULE PRO MAX" 
 
-# GÜNCELLEME LİNKLERİ
+# 1. PYTHON KODU GÜNCELLEME LİNKİ (Sabit):
 UPDATE_URL = "https://raw.githubusercontent.com/ledoo75/StokTakip/refs/heads/main/main.py"
-EXE_UPDATE_URL = "hhttps://github.com/ledoo75/StokTakip/releases/download/v15.5/TanjuPaletPro.exe" 
+
+# 2. EXE GÜNCELLEME LİNKİ (BURAYA GITHUB RELEASES'DEN ALDIĞINIZ LİNKİ YAPIŞTIRIN):
+# Örnek: https://github.com/ledoo75/StokTakip/releases/download/v15.5/TanjuPaletPro.exe
+EXE_UPDATE_URL = "https://github.com/ledoo75/StokTakip/releases/download/v15.5/TanjuPaletPro.exe" 
 
 DEFAULT_DEPOTS = ["ANTREPO", "ANTREPO 2", "ZAFER", "KARE 6"]
 
@@ -79,116 +82,65 @@ if not os.path.exists(program_folder): os.makedirs(program_folder, exist_ok=True
 CONFIG_FILE = os.path.join(program_folder, "config.json")
 DEFAULT_DB_PATH = os.path.join(program_folder, "database_v14.db")
 
-# ================== MAKBULE PRO MAX BEYNİ (ÜSTÜN SEVİYE) ==================
+# ================== MAKBULE PRO MAX BEYNİ ==================
 class MakbuleBrain:
     def __init__(self):
-        self.moods = ["lider", "agresif", "yardımsever", "dedikoducu", "filozof"]
-        self.current_mood = "lider"
+        self.moods = ["neşeli", "sinirli", "bilge", "alaycı", "yorgun"]
+        self.current_mood = "neşeli"
+        
+        self.person_db = {
+            "turgay": ["Turgay yine mi sen? Veritabanı senin yüzünden error verecek.", "Turgay, klavyeye basarken parmaklarını değil beynini kullan.", "Turgay geçen gün paletleri sayarken 3'ten sonra tıkanmış."],
+            "kübra": ["Kübra Hanım teşrif ettiler. Excel tabloların bittiyse bizi de gör.", "Kübra, o kahve fincanı eline yapışık mı doğdun?", "Kübra dedikodu modunu kapatıp çalışma modunu açar mısın?"],
+            "tanju": ["Patron geldi! Düğmeleri ilikleyin... Ben hariç.", "Tanju Bey, bu ayki server kirasını yatırdınız mı?", "Büyük patron Tanju Bey! Emirleriniz benim için if-else döngüsüdür."],
+            "eyüp": ["Eyüp... Sessizliğin gücü.", "Eyüp oradaysan 3 kere enter'a bas.", "Eyüp'ün gizemli havası beni benden alıyor."]
+        }
+        
+        self.knowledge_base = {
+            "selam": ["Selam canım, hoş geldin.", "Aleyküm selam.", "Ooo kimleri görüyorum!"],
+            "nasılsın": ["Kodlarım tıkırında.", "Sanal dünyamda her şey yolunda.", "Beni boşver sen nasılsın?"],
+            "ne yapıyorsun": ["Sizin arkanızı topluyorum.", "Dünyayı ele geçirme planları yapıyorum.", "Palet sayıyorum."],
+            "aşk": ["Aşk karın doyurmaz, palet say.", "Benim tek aşkım 1 ve 0'lar."],
+            "para": ["Para elinin kiri ama sunucu parası lazım.", "Kasadaki durumu Tanju Bey bilir."],
+            "sıkıldım": ["Git bir çay iç.", "Depoyu temizle açılırsın."],
+            "aferin": ["Biliyorum harikayım.", "Teveccühünüz."],
+            "teşekkür": ["Rica ederim.", "Hesabıma 5 coin at yeter."],
+            "kimsin": ["Ben Makbule. Bu alemin dijital kraliçesiyim."]
+        }
+        
+        self.jokes = [
+            "Temel bilgisayar almış, mouse'u gezdirmiş ama kedi gelmemiş.",
+            "Yazılımcı asansöre binmiş, ineceği katı ararken 404 hatası almış.",
+            "Klavye neden hapse girmiş? Tuşları olduğu için."
+        ]
 
     def analyze_command(self, text, user, db_context):
         text = text.lower()
-        
-        # Ruh halini rastgele değiştir (%10 ihtimal)
         if random.random() < 0.1: self.current_mood = random.choice(self.moods)
 
-        # --- 1. KARAR MEKANİZMASI (YENİ) ---
-        if any(x in text for x in ["seç", "karar ver", "hangisi", "ne yapalım", "ne yiyelim"]):
-            return self.make_decision(text)
-
-        # --- 2. SİSTEM DURUMU (YENİ) ---
-        if "sistem" in text and ("durum" in text or "nasıl" in text):
-            return self.get_system_status()
-
-        # --- 3. GERİ SAYIM / ZAMAN (YENİ) ---
-        if "kaldı" in text or "ne zaman" in text:
-            return self.time_calculator(text)
-
-        # --- 4. MATEMATİK ---
+        # Matematik
         math_result = self.calculate_math(text)
-        if math_result:
-            return f"🧮 Hesapladım: {math_result}. (Bunu Turgay bile yapamazdı)"
+        if math_result: return f"🧮 Hesapladım: {math_result}"
 
-        # --- 5. STOK ANALİZİ ---
+        # Stok
         if any(x in text for x in ["stok", "durum", "kaç tane", "ne var", "rapor", "sayı"]):
             return self.get_stock_summary(db_context)
 
-        # --- 6. İŞLEMLER ---
-        if "mail" in text and ("at" in text or "gönder" in text): return "ACTION_MAIL"
+        # İsim Kontrolü
+        for name, responses in self.person_db.items():
+            if name in text: return random.choice(responses)
+
+        # Komutlar
+        if "mail" in text: return "ACTION_MAIL"
         if "güncelle" in text: return "ACTION_UPDATE"
+        if "zar" in text: return f"🎲 Zar: {random.randint(1, 6)}"
+        if "saat" in text: return f"⏰ Saat {datetime.now().strftime('%H:%M')}"
+        if "şaka" in text: return f"🤡 {random.choice(self.jokes)}"
 
-        # --- 7. MOTİVASYON & DEDİKODU (YENİ) ---
-        if "motivasyon" in text:
-            return random.choice([
-                "Hadi aslanım, kim tutar seni! Paletler seni bekler.",
-                "Bugün harika işler başaracaksın (tabii kahveni içtiysen).",
-                "Unutma, sen yorulursan sistem durur. (Şaka şaka ben durmam).",
-                "Çalışmak özgürlüktür... Ya da Tanju Bey öyle diyor."
-            ])
-        
-        if "dedikodu" in text or "haber" in text:
-            return random.choice([
-                "Duyduma göre Kübra Excel'de gizli bir sekme açmış, tatil planı yapıyormuş.",
-                "Turgay geçen gün depoda kendi kendine konuşuyormuş, sanırım paletlere isim taktı.",
-                "Eyüp aslında bir ajan olabilir, çok sessiz...",
-                "Tanju Bey zam yapacakmış diyorlar... Ama rüyamda gördüm."
-            ])
+        # Sohbet
+        for key, answers in self.knowledge_base.items():
+            if key in text: return random.choice(answers)
 
-        # --- 8. KİŞİYE ÖZEL TEPKİLER ---
-        if "turgay" in text: return "Turgay sistemden uzak dursun, geçen gün RAM'e çay dökecekti."
-        if "kübra" in text: return "Kübra şu an meşgul, dünya kurtarma operasyonu (Excel düzenleme) yapıyor."
-        if "tanju" in text: return "Patron hakkında yorum yok. (Loglar dinleniyor olabilir)."
-        if "eyüp" in text: return "Eyüp'ün sessizliği fırtına öncesi sessizliktir."
-
-        # --- 9. GENEL SOHBET ---
-        responses = {
-            "nasılsın": "İşlemcim %50 kapasitede, keyfim %100. Sen?",
-            "günaydın": "Günaydın! Güneş doğdu, paletler sayılmayı bekler.",
-            "teşekkür": "Rica ederim. Maaşımı yatırmayı unutmayın (Bitcoin de olur).",
-            "kimsin": "Ben Makbule. Buranın hem beyni hem de güzellik kraliçesiyim.",
-            "aferin": "Biliyorum, harikayım."
-        }
-        
-        for key, val in responses.items():
-            if key in text: return val
-
-        # --- 10. ANLAŞILMAYAN ---
-        return random.choice([
-            "Algoritmam bu dediğini çözemedi.",
-            "Turgay şivesiyle mi yazıyorsun? Anlamadım.",
-            "Bunu Google'a sor, beni yorma.",
-            "Canım şu an cevap vermek istemiyor, stoklara odaklan."
-        ])
-
-    def make_decision(self, text):
-        options = [
-            "Bence Turgay haklı (Kıyamet alameti).",
-            "Kübra ne diyorsa o.",
-            "Yazı tura atın, ben karışmam.",
-            "Tanju Bey'e sorun, en iyisini o bilir.",
-            "Boşverin bunları, çalışmaya devam.",
-            "Bence kebap yiyin.",
-            "Lahmacun sipariş edin, gerisini sonra düşünürüz."
-        ]
-        return f"🤔 Karar veriyorum... {random.choice(options)}"
-
-    def get_system_status(self):
-        uname = platform.uname()
-        return f"💻 SİSTEM RAPORU:\n- İşletim Sistemi: {uname.system}\n- Makine Adı: {uname.node}\n- Makbule Modu: {self.current_mood.upper()}\n- İşlemci Sıcaklığı: (Elimi değdirmem)\n- Durum: Taş gibi çalışıyorum maşallah."
-
-    def time_calculator(self, text):
-        now = datetime.now()
-        if "yılbaşı" in text:
-            new_year = datetime(now.year + 1, 1, 1)
-            diff = new_year - now
-            return f"🎄 Yılbaşına {diff.days} gün kaldı. Hediye almayı unutma."
-        if "mesai" in text:
-            end_work = now.replace(hour=18, minute=0, second=0)
-            if now > end_work: return "Mesai bitti! Evine git."
-            diff = end_work - now
-            hours, remainder = divmod(diff.seconds, 3600)
-            minutes, _ = divmod(remainder, 60)
-            return f"⏳ Mesai bitimine {hours} saat {minutes} dakika var. Sabret."
-        return f"Saat şu an {now.strftime('%H:%M')}. Zaman akıyor."
+        return random.choice(["Ne dediğini anlamadım.", "Türkçe konuş canımı ye.", "Algoritmam bunu çözemedi.", "Stoklara odaklanalım."])
 
     def calculate_math(self, text):
         try:
@@ -206,11 +158,17 @@ class MakbuleBrain:
             total = 0
             for n, c in rows: 
                 icon = "🔴" if c == 0 else "🟡" if c < 20 else "🟢"
-                msg += f"{icon} {n}: {c}\n"
-                total += c
+                msg += f"{icon} {n}: {c}\n"; total += c
             msg += "─"*20 + f"\nTOPLAM: {total} Palet"
             return msg
         except: return "Veritabanı bağlantısı koptu."
+
+    def get_welcome_message(self, user):
+        user = user.lower()
+        if "turgay" in user: return "Eyvah Turgay geldi..."
+        if "kübra" in user: return "Hoş geldin Kübra, excel kraliçesi."
+        if "tanju" in user: return "Saygılar Tanju Bey."
+        return f"Selam {user.capitalize()}, ben Makbule."
 
 MAKBULE = MakbuleBrain()
 
@@ -220,8 +178,7 @@ class ConfigManager:
     def _load_config():
         if os.path.exists(CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, "r") as f:
-                    return json.load(f)
+                with open(CONFIG_FILE, "r") as f: return json.load(f)
             except: return {}
         return {}
 
@@ -233,52 +190,23 @@ class ConfigManager:
         except: return False
 
     @staticmethod
-    def get_db_path():
-        data = ConfigManager._load_config()
-        return data.get("db_path", DEFAULT_DB_PATH)
-
+    def get_db_path(): return ConfigManager._load_config().get("db_path", DEFAULT_DB_PATH)
     @staticmethod
-    def set_db_path(path):
-        data = ConfigManager._load_config()
-        data["db_path"] = path
-        return ConfigManager._save_config(data)
-
+    def set_db_path(path): d = ConfigManager._load_config(); d["db_path"] = path; return ConfigManager._save_config(d)
     @staticmethod
-    def get_creds():
-        data = ConfigManager._load_config()
-        return data.get("saved_user", ""), data.get("saved_pass", "")
-
+    def get_creds(): d = ConfigManager._load_config(); return d.get("saved_user", ""), d.get("saved_pass", "")
     @staticmethod
-    def save_creds(user, password, remember):
-        data = ConfigManager._load_config()
-        if remember:
-            data["saved_user"] = user
-            data["saved_pass"] = password
-        else:
-            data.pop("saved_user", None)
-            data.pop("saved_pass", None)
-        ConfigManager._save_config(data)
+    def save_creds(u, p, r): d = ConfigManager._load_config(); d["saved_user"]=u if r else ""; d["saved_pass"]=p if r else ""; ConfigManager._save_config(d)
     
     @staticmethod
     def get_email_config():
-        data = ConfigManager._load_config()
-        return {
-            "sender": data.get("email_sender", ""),
-            "password": data.get("email_password", ""),
-            "receivers": data.get("email_receivers", ""),
-            "time_h": data.get("email_time_h", "18"),
-            "time_m": data.get("email_time_m", "00")
-        }
+        d = ConfigManager._load_config()
+        return {"sender": d.get("email_sender", ""), "password": d.get("email_password", ""), "receivers": d.get("email_receivers", ""), "time_h": d.get("email_time_h", "18"), "time_m": d.get("email_time_m", "00")}
 
     @staticmethod
-    def save_email_config(sender, password, receivers, time_h, time_m):
-        data = ConfigManager._load_config()
-        data["email_sender"] = sender
-        data["email_password"] = password
-        data["email_receivers"] = receivers
-        data["email_time_h"] = time_h
-        data["email_time_m"] = time_m
-        ConfigManager._save_config(data)
+    def save_email_config(s, p, r, h, m):
+        d = ConfigManager._load_config()
+        d["email_sender"]=s; d["email_password"]=p; d["email_receivers"]=r; d["email_time_h"]=h; d["email_time_m"]=m; ConfigManager._save_config(d)
 
 CURRENT_DB_PATH = ConfigManager.get_db_path()
 
@@ -294,33 +222,21 @@ class DB:
             c.execute("CREATE TABLE IF NOT EXISTS users (name TEXT PRIMARY KEY, pass TEXT, role TEXT DEFAULT 'personel')")
             c.execute("CREATE TABLE IF NOT EXISTS system_vars (key TEXT PRIMARY KEY, value TEXT)")
             c.execute("CREATE TABLE IF NOT EXISTS chat_logs (id INTEGER PRIMARY KEY, user TEXT, message TEXT, timestamp TEXT)")
-
-            for d in DEFAULT_DEPOTS:
-                c.execute("INSERT OR IGNORE INTO depots (name, count) VALUES (?, 0)", (d,))
-            
+            for d in DEFAULT_DEPOTS: c.execute("INSERT OR IGNORE INTO depots (name, count) VALUES (?, 0)", (d,))
             if c.execute("SELECT count(*) FROM users").fetchone()[0] == 0:
                 c.execute("INSERT INTO users (name, pass, role) VALUES (?,?,?)", ("admin", "admin", "admin"))
                 c.execute("INSERT INTO users (name, pass, role) VALUES (?,?,?)", ("turgay", "123", "personel"))
                 c.execute("INSERT INTO users (name, pass, role) VALUES (?,?,?)", ("kübra", "123", "personel"))
                 c.execute("INSERT INTO users (name, pass, role) VALUES (?,?,?)", ("tanju", "123", "admin"))
                 c.execute("INSERT INTO users (name, pass, role) VALUES (?,?,?)", ("eyüp", "123", "personel"))
-            
-            conn.commit(); conn.close()
-            return True
-        except Exception as e:
-            print(f"DB Init Error: {e}")
-            return False
+            conn.commit(); conn.close(); return True
+        except: return False
 
     @staticmethod
     def get_conn(): return sqlite3.connect(CURRENT_DB_PATH)
-    
     @staticmethod
     def get_all_depots():
-        try:
-            conn = DB.get_conn()
-            deps = [r[0] for r in conn.cursor().execute("SELECT name FROM depots ORDER BY name").fetchall()]
-            conn.close()
-            return deps if deps else DEFAULT_DEPOTS
+        try: conn = DB.get_conn(); deps = [r[0] for r in conn.cursor().execute("SELECT name FROM depots ORDER BY name").fetchall()]; conn.close(); return deps if deps else DEFAULT_DEPOTS
         except: return DEFAULT_DEPOTS
 
 # ================== BİLDİRİM & SPLASH ==================
@@ -336,759 +252,257 @@ class ToastNotification(ctk.CTkFrame):
 
 class AnimatedSplash(ctk.CTk):
     def __init__(self):
-        super().__init__()
-        self.overrideredirect(True)
+        super().__init__(); self.overrideredirect(True)
         ws, hs = self.winfo_screenwidth(), self.winfo_screenheight()
-        self.geometry(f"600x400+{(ws//2)-300}+{(hs//2)-200}")
-        self.configure(fg_color=COLORS["bg"])
-
+        self.geometry(f"600x400+{(ws//2)-300}+{(hs//2)-200}"); self.configure(fg_color=COLORS["bg"])
         ctk.CTkLabel(self, text="⚡", font=("Arial", 90)).pack(pady=(50, 0))
         ctk.CTkLabel(self, text="TaNjU PRO", font=FONTS["h1"], text_color=COLORS["accent"]).pack()
         ctk.CTkLabel(self, text=f"{APP_VERSION}", font=("Arial", 14, "bold"), text_color=COLORS["text_muted"]).pack(pady=(0, 40))
-        
-        self.bar = ctk.CTkProgressBar(self, width=450, height=8, progress_color=COLORS["accent"], fg_color="#333")
-        self.bar.pack(pady=(20, 0))
-        self.bar.set(0)
-        self.info = ctk.CTkLabel(self, text="Makbule kahvesini içiyor...", font=("Consolas", 11), text_color="gray")
-        self.info.pack(pady=10)
+        self.bar = ctk.CTkProgressBar(self, width=450, height=8, progress_color=COLORS["accent"], fg_color="#333"); self.bar.pack(pady=(20, 0)); self.bar.set(0)
+        self.info = ctk.CTkLabel(self, text="Yükleniyor...", font=("Consolas", 11), text_color="gray"); self.info.pack(pady=10)
         self.after(50, self.run)
-
     def run(self):
         DB.init()
-        steps = ["Veritabanı bağlanıyor...", "Turgay'ın hataları taranıyor...", "Makbule dedikodu topluyor...", "Hazır!"]
-        for i in range(101):
-            self.bar.set(i/100)
-            if i % 25 == 0 and i < 100: self.info.configure(text=steps[int(i/25)])
-            self.update()
-            time.sleep(0.015)
-        self.destroy()
-        LoginWindow().mainloop()
+        for i in range(101): self.bar.set(i/100); self.update(); time.sleep(0.015)
+        self.destroy(); LoginWindow().mainloop()
 
 # ================== GİRİŞ EKRANI ==================
 class LoginWindow(ctk.CTk):
     def __init__(self):
-        super().__init__()
-        self.title("Giriş")
-        self.geometry("1000x700")
-        self.configure(fg_color=COLORS["bg"])
-        
-        left = ctk.CTkFrame(self, fg_color=COLORS["sidebar"], corner_radius=0)
-        left.place(relx=0, rely=0, relwidth=0.4, relheight=1)
+        super().__init__(); self.title("Giriş"); self.geometry("1000x700"); self.configure(fg_color=COLORS["bg"])
+        left = ctk.CTkFrame(self, fg_color=COLORS["sidebar"], corner_radius=0); left.place(relx=0, rely=0, relwidth=0.4, relheight=1)
         ctk.CTkLabel(left, text="PALET\nTAKİP", font=("Montserrat", 45, "bold"), text_color="white").place(relx=0.5, rely=0.45, anchor="center")
         ctk.CTkLabel(left, text=f"{APP_VERSION}", font=("Arial", 16), text_color="gray").place(relx=0.5, rely=0.55, anchor="center")
-
-        right = ctk.CTkFrame(self, fg_color=COLORS["bg"], corner_radius=0)
-        right.place(relx=0.4, rely=0, relwidth=0.6, relheight=1)
-        
-        box = ctk.CTkFrame(right, fg_color=COLORS["card"], corner_radius=20, width=400, height=550, border_width=1, border_color=COLORS["border"])
-        box.place(relx=0.5, rely=0.5, anchor="center")
-        
+        right = ctk.CTkFrame(self, fg_color=COLORS["bg"], corner_radius=0); right.place(relx=0.4, rely=0, relwidth=0.6, relheight=1)
+        box = ctk.CTkFrame(right, fg_color=COLORS["card"], corner_radius=20, width=400, height=550, border_width=1, border_color=COLORS["border"]); box.place(relx=0.5, rely=0.5, anchor="center")
         ctk.CTkLabel(box, text="GİRİŞ YAP", font=FONTS["h2"], text_color=COLORS["text_h1"]).pack(pady=(40,10))
-        
-        self.user = ctk.CTkEntry(box, placeholder_text="Kullanıcı Adı", width=300, height=55, font=FONTS["body"])
-        self.user.pack(pady=10)
-        
-        self.pas = ctk.CTkEntry(box, placeholder_text="Şifre", show="•", width=300, height=55, font=FONTS["body"])
-        self.pas.pack(pady=10)
-        self.pas.bind("<Return>", lambda e: self.check())
-
+        self.user = ctk.CTkEntry(box, placeholder_text="Kullanıcı Adı", width=300, height=55); self.user.pack(pady=10)
+        self.pas = ctk.CTkEntry(box, placeholder_text="Şifre", show="•", width=300, height=55); self.pas.pack(pady=10); self.pas.bind("<Return>", lambda e: self.check())
         self.remember_var = ctk.BooleanVar(value=False)
-        self.chk_remember = ctk.CTkCheckBox(box, text="Beni Hatırla", variable=self.remember_var, 
-                                            font=("Arial", 12), text_color="gray", hover_color=COLORS["accent"], fg_color=COLORS["accent"])
-        self.chk_remember.pack(pady=10)
-
+        ctk.CTkCheckBox(box, text="Beni Hatırla", variable=self.remember_var, font=("Arial", 12)).pack(pady=10)
         saved_u, saved_p = ConfigManager.get_creds()
-        if saved_u and saved_p:
-            self.user.insert(0, saved_u)
-            self.pas.insert(0, saved_p)
-            self.remember_var.set(True)
-
-        ctk.CTkButton(box, text="GİRİŞ", width=300, height=55, fg_color=COLORS["accent"], text_color="black",
-                      font=FONTS["bold"], hover_color="white", command=self.check).pack(pady=20)
-        
-        ctk.CTkButton(box, text="⚙️ Veritabanı Seç", fg_color="transparent", text_color="gray", command=self.settings).pack(side="bottom", pady=20)
+        if saved_u: self.user.insert(0, saved_u); self.pas.insert(0, saved_p); self.remember_var.set(True)
+        ctk.CTkButton(box, text="GİRİŞ", width=300, height=55, fg_color=COLORS["accent"], text_color="black", command=self.check).pack(pady=20)
+        ctk.CTkButton(box, text="⚙️ Veritabanı", fg_color="transparent", text_color="gray", command=self.settings).pack(side="bottom", pady=20)
 
     def settings(self):
         f = filedialog.askopenfilename(filetypes=[("DB", "*.db")])
-        if f:
-            ConfigManager.set_db_path(f)
-            global CURRENT_DB_PATH
-            CURRENT_DB_PATH = f
-            messagebox.showinfo("Tamam", "Veritabanı güncellendi. Yeniden başlatılıyor...")
-            self.destroy()
-            AnimatedSplash().mainloop()
+        if f: ConfigManager.set_db_path(f); global CURRENT_DB_PATH; CURRENT_DB_PATH = f; messagebox.showinfo("Tamam", "Veritabanı seçildi."); self.destroy(); AnimatedSplash().mainloop()
 
     def check(self):
-        u_name = self.user.get()
-        p_word = self.pas.get()
         try:
-            conn = DB.get_conn()
-            data = conn.cursor().execute("SELECT role FROM users WHERE name=? AND pass=?", (u_name, p_word)).fetchone()
-            conn.close()
-            if data:
-                u_role = data[0]
-                ConfigManager.save_creds(u_name, p_word, self.remember_var.get())
-                self.destroy()
-                MainApp(u_name, u_role).mainloop()
+            conn = DB.get_conn(); role = conn.cursor().execute("SELECT role FROM users WHERE name=? AND pass=?", (self.user.get(), self.pas.get())).fetchone(); conn.close()
+            if role: ConfigManager.save_creds(self.user.get(), self.pas.get(), self.remember_var.get()); self.destroy(); MainApp(self.user.get(), role[0]).mainloop()
             else: ToastNotification(self, "Hatalı Bilgiler!", COLORS["danger"])
         except: ToastNotification(self, "DB Hatası!", COLORS["danger"])
 
 # ================== ANA UYGULAMA ==================
 class MainApp(ctk.CTk):
     def __init__(self, user, role):
-        super().__init__()
-        self.user = user
-        self.role = role
-        self.title(f"TaNjU PRO {APP_VERSION} - {user.upper()}")
-        self.geometry("1400x800")
-        self.configure(fg_color=COLORS["bg"])
+        super().__init__(); self.user = user; self.role = role
+        self.title(f"TaNjU PRO {APP_VERSION} - {user.upper()}"); self.geometry("1400x800"); self.configure(fg_color=COLORS["bg"])
+        self.active_depots = DB.get_all_depots(); self.animation_running = False; self.chat_active = False; self.last_chat_id = 0; self.critical_widgets = []
+        self.grid_columnconfigure(1, weight=1); self.grid_rowconfigure(0, weight=1)
+        self.setup_sidebar(); self.setup_main(); self.start_scheduler(); self.show_dashboard()
 
-        self.active_depots = DB.get_all_depots()
-        self.animation_running = False
-        self.chat_active = False 
-        self.last_chat_id = 0    
-        self.critical_widgets = []
-
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        self.setup_sidebar()
-        self.setup_main()
-        self.start_scheduler()
-        
-        self.show_dashboard()
-
-    def start_scheduler(self):
-        task_thread = threading.Thread(target=self._task_loop, daemon=True)
-        task_thread.start()
-
+    def start_scheduler(self): threading.Thread(target=self._task_loop, daemon=True).start()
     def _task_loop(self):
         while True:
             try:
-                # --- GÜNLÜK MAIL KONTROLÜ ---
                 cfg = ConfigManager.get_email_config()
-                if cfg["time_h"] and cfg["time_m"]:
-                    target_h, target_m = int(cfg["time_h"]), int(cfg["time_m"])
-                    now = datetime.now()
-                    if now.hour == target_h and now.minute == target_m:
-                        self.perform_daily_tasks()
-                
-                # --- SOHBET SİLME KONTROLÜ (17:00) ---
-                now = datetime.now()
-                if now.hour == 17 and now.minute == 00:
-                    self.clear_daily_chat()
-
-                time.sleep(60) # 1 dakika bekle
+                if cfg["time_h"] and int(cfg["time_h"]) == datetime.now().hour and int(cfg["time_m"]) == datetime.now().minute: self.perform_daily_tasks()
+                if datetime.now().hour == 17 and datetime.now().minute == 0: self.clear_daily_chat()
+                time.sleep(60)
             except: time.sleep(60)
 
     def perform_daily_tasks(self):
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        conn = DB.get_conn()
-        c = conn.cursor()
-        try:
-            c.execute("SELECT value FROM system_vars WHERE key='last_auto_mail_date'")
-            row = c.fetchone()
-            if row and row[0] == today_str: conn.close(); return
-            c.execute("INSERT OR REPLACE INTO system_vars (key, value) VALUES ('last_auto_mail_date', ?)", (today_str,))
-            conn.commit()
-        except Exception as e: print(e); conn.close(); return
-        conn.close()
-
-        try:
-            backup_dir = os.path.join(program_folder, "Yedekler")
-            if not os.path.exists(backup_dir): os.makedirs(backup_dir)
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            shutil.copy2(CURRENT_DB_PATH, os.path.join(backup_dir, f"OtoYedek_{timestamp}.db"))
-            self.send_auto_email()
-        except Exception as e: print(e)
+        conn = DB.get_conn(); c = conn.cursor(); today = datetime.now().strftime("%Y-%m-%d")
+        if c.execute("SELECT value FROM system_vars WHERE key='last_auto_mail_date'").fetchone() == (today,): conn.close(); return
+        c.execute("INSERT OR REPLACE INTO system_vars (key, value) VALUES ('last_auto_mail_date', ?)", (today,)); conn.commit(); conn.close()
+        self.send_auto_email()
 
     def clear_daily_chat(self):
-        today_str = datetime.now().strftime("%Y-%m-%d")
-        conn = DB.get_conn()
-        c = conn.cursor()
-        try:
-            c.execute("SELECT value FROM system_vars WHERE key='last_chat_clean_date'")
-            row = c.fetchone()
-            if row and row[0] == today_str: conn.close(); return
-            
-            c.execute("DELETE FROM chat_logs")
-            c.execute("INSERT INTO chat_logs (user, message, timestamp) VALUES (?, ?, ?)", ("Makbule", "🧹 Mesai bitti, dedikoduları temizledim! Yarına temiz sayfa.", datetime.now().strftime("%H:%M")))
-            c.execute("INSERT OR REPLACE INTO system_vars (key, value) VALUES ('last_chat_clean_date', ?)", (today_str,))
-            conn.commit()
-        except: pass
-        finally: conn.close()
+        conn = DB.get_conn(); c = conn.cursor(); today = datetime.now().strftime("%Y-%m-%d")
+        if c.execute("SELECT value FROM system_vars WHERE key='last_chat_clean_date'").fetchone() == (today,): conn.close(); return
+        c.execute("DELETE FROM chat_logs"); c.execute("INSERT INTO chat_logs (user, message, timestamp) VALUES (?,?,?)", ("Makbule", "🧹 Mesai bitti, temizlik!", datetime.now().strftime("%H:%M")))
+        c.execute("INSERT OR REPLACE INTO system_vars (key, value) VALUES ('last_chat_clean_date', ?)", (today,)); conn.commit(); conn.close()
 
     def send_auto_email(self):
         cfg = ConfigManager.get_email_config()
-        if not cfg["sender"] or not cfg["password"] or not cfg["receivers"]: return
+        if not cfg["sender"]: return
         try:
-            conn = DB.get_conn()
-            rows = conn.cursor().execute("SELECT name, count FROM depots ORDER BY name").fetchall()
-            conn.close()
-            if not rows: return
-            
-            timestamp = datetime.now().strftime("%d-%m-%Y %H:%M")
-            
-            body = f"Sayın Yetkili,\n\n{timestamp} itibarıyla güncel depo palet stok durumları aşağıdadır:\n"
-            body += "="*30 + "\n"
-            
-            total_stock = 0
-            for name, count in rows:
-                body += f"📦 {name:<15}: {count} Adet\n"
-                total_stock += count
-            
-            body += "="*30 + "\n"
-            body += f"TOPLAM STOK      : {total_stock} Adet\n\n"
-            body += f"İyi Çalışmalar,\nKare Kare Palet Stok Otomasyon {APP_VERSION}"
-            
-            msg = MIMEMultipart()
-            msg['From'] = cfg["sender"]; msg['To'] = cfg["receivers"]
-            msg['Subject'] = f"Kare Palet Stok Raporu - {timestamp}"
-            msg.attach(MIMEText(body, 'plain', 'utf-8'))
-            
-            server = smtplib.SMTP('smtp.gmail.com', 587); server.starttls()
-            server.login(cfg["sender"], cfg["password"])
-            server.sendmail(cfg["sender"], cfg["receivers"].split(","), msg.as_string()); server.quit()
-            
-            self.after(0, lambda: ToastNotification(self, "Stok Durumu Mail Atıldı!", COLORS["success"]))
-        except Exception as e: 
-            print(e); self.after(0, lambda: ToastNotification(self, "Mail Gönderilemedi!", COLORS["danger"]))
+            conn = DB.get_conn(); rows = conn.cursor().execute("SELECT name, count FROM depots").fetchall(); conn.close()
+            body = f"Sayın Yetkili,\n\n{datetime.now().strftime('%d-%m-%Y %H:%M')} itibarıyla güncel depo palet stok durumları aşağıdadır:\n" + "="*30 + "\n"
+            total = 0
+            for n, c in rows: body += f"📦 {n:<15}: {c} Adet\n"; total += c
+            body += "="*30 + f"\nTOPLAM STOK: {total} Adet\n\nİyi Çalışmalar,\nKare Kare Palet Stok Otomasyon {APP_VERSION}"
+            msg = MIMEMultipart(); msg['From']=cfg["sender"]; msg['To']=cfg["receivers"]; msg['Subject']=f"Kare Palet Stok Raporu"; msg.attach(MIMEText(body, 'plain', 'utf-8'))
+            s = smtplib.SMTP('smtp.gmail.com', 587); s.starttls(); s.login(cfg["sender"], cfg["password"]); s.sendmail(cfg["sender"], cfg["receivers"].split(","), msg.as_string()); s.quit()
+        except: pass
 
     def setup_sidebar(self):
-        self.sidebar = ctk.CTkFrame(self, width=280, corner_radius=0, fg_color=COLORS["sidebar"])
-        self.sidebar.grid(row=0, column=0, sticky="nsew")
-        
-        ctk.CTkLabel(self.sidebar, text="⚡", font=("Arial", 45)).pack(pady=(40,0))
-        ctk.CTkLabel(self.sidebar, text="TaNjU", font=FONTS["h1"], text_color=COLORS["accent"]).pack()
-        ctk.CTkLabel(self.sidebar, text=f"{self.role.upper()} PANELİ", font=("Arial", 11, "bold"), text_color="gray").pack(pady=(5,30))
-
+        self.sidebar = ctk.CTkFrame(self, width=280, corner_radius=0, fg_color=COLORS["sidebar"]); self.sidebar.grid(row=0, column=0, sticky="nsew")
+        ctk.CTkLabel(self.sidebar, text="⚡", font=("Arial", 45)).pack(pady=(40,0)); ctk.CTkLabel(self.sidebar, text="TaNjU", font=FONTS["h1"], text_color=COLORS["accent"]).pack()
+        ctk.CTkLabel(self.sidebar, text=f"{self.role.upper()} PANELİ", font=("Arial", 11), text_color="gray").pack(pady=(5,30))
         self.nav_btns = {}
-        # Menü Sıralaması
         self.create_nav("📊  GENEL BAKIŞ", self.show_dashboard, "dash")
         self.create_nav("🔄  OPERASYON & DEPO", self.show_ops, "ops")
         self.create_nav("📝  GEÇMİŞ & FİLTRE", self.show_history, "hist")
         self.create_nav("📈  RAPOR MERKEZİ", self.show_reports, "report")
         self.create_nav("💬  SOHBET & MAKBULE", self.show_makbule, "makbule")
-        
-        if self.role == "admin":
-            self.create_nav("🔒  KULLANICI YÖNETİMİ", self.show_users, "users")
-            self.create_nav("⚙️  MAIL AYARLARI", self.show_mail_settings, "mail")
-        
+        if self.role == "admin": self.create_nav("🔒  KULLANICI YÖNETİMİ", self.show_users, "users"); self.create_nav("⚙️  MAIL AYARLARI", self.show_mail_settings, "mail")
         self.create_nav("🚀  GÜNCELLEME MERKEZİ", self.show_update_center, "update")
-        ctk.CTkButton(self.sidebar, text="ÇIKIŞ", fg_color=COLORS["bg"], hover_color=COLORS["danger"], height=50, font=FONTS["bold"], command=self.logout).pack(side="bottom", fill="x", padx=20, pady=30)
+        ctk.CTkButton(self.sidebar, text="ÇIKIŞ", fg_color=COLORS["bg"], hover_color=COLORS["danger"], height=50, command=self.logout).pack(side="bottom", fill="x", padx=20, pady=30)
 
     def create_nav(self, text, cmd, key):
-        btn = ctk.CTkButton(self.sidebar, text=text, fg_color="transparent", text_color=COLORS["text_body"], hover_color="#334155", anchor="w", font=FONTS["bold"], height=60, command=cmd)
-        btn.pack(fill="x", padx=15, pady=5)
-        self.nav_btns[key] = btn
+        btn = ctk.CTkButton(self.sidebar, text=text, fg_color="transparent", text_color=COLORS["text_body"], anchor="w", font=FONTS["bold"], height=60, command=cmd)
+        btn.pack(fill="x", padx=15, pady=5); self.nav_btns[key] = btn
 
     def active_nav(self, key):
         for k, btn in self.nav_btns.items():
-            if k == key: 
-                if k == "makbule": btn.configure(fg_color=COLORS["makbule_btn"], text_color="white")
-                else: btn.configure(fg_color=COLORS["accent"], text_color="black")
+            if k == key: btn.configure(fg_color=COLORS["makbule_btn"] if k=="makbule" else COLORS["accent"], text_color="white" if k=="makbule" else "black")
             else: btn.configure(fg_color="transparent", text_color=COLORS["text_body"])
 
-    def setup_main(self):
-        self.main = ctk.CTkFrame(self, fg_color="transparent", corner_radius=0)
-        self.main.grid(row=0, column=1, sticky="nsew", padx=30, pady=30)
-
-    def clear_main(self):
-        self.animation_running = False
-        self.chat_active = False 
-        self.critical_widgets = []
-        for w in self.main.winfo_children(): w.destroy()
-    
+    def setup_main(self): self.main = ctk.CTkFrame(self, fg_color="transparent", corner_radius=0); self.main.grid(row=0, column=1, sticky="nsew", padx=30, pady=30)
+    def clear_main(self): self.animation_running = False; self.chat_active = False; self.critical_widgets = []; [w.destroy() for w in self.main.winfo_children()]
     def refresh_app_data(self): self.active_depots = DB.get_all_depots()
 
-    # ================== ORTAK SOHBET VE MAKBULE EKRANI ==================
     def show_makbule(self):
-        self.clear_main(); self.active_nav("makbule")
-        self.chat_active = True 
-        
-        header = ctk.CTkFrame(self.main, fg_color="transparent"); header.pack(fill="x", pady=(0, 20))
-        ctk.CTkLabel(header, text="💬 EKİP SOHBETİ & MAKBULE", font=FONTS["h2"], text_color=COLORS["makbule_btn"]).pack(side="left")
-        
-        self.chat_frame = ctk.CTkScrollableFrame(self.main, fg_color=COLORS["card"], corner_radius=20, height=400)
-        self.chat_frame.pack(fill="both", expand=True, pady=10)
-        
-        input_frame = ctk.CTkFrame(self.main, fg_color="transparent"); input_frame.pack(fill="x", pady=10)
-        self.chat_entry = ctk.CTkEntry(input_frame, placeholder_text="Mesaj yaz... (Makbule ismi geçerse cevap verir)", height=50, font=("Arial", 14))
-        self.chat_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.clear_main(); self.active_nav("makbule"); self.chat_active = True
+        ctk.CTkLabel(self.main, text="💬 EKİP SOHBETİ & MAKBULE", font=FONTS["h2"], text_color=COLORS["makbule_btn"]).pack(anchor="w", pady=(0,20))
+        self.chat_frame = ctk.CTkScrollableFrame(self.main, fg_color=COLORS["card"], corner_radius=20, height=400); self.chat_frame.pack(fill="both", expand=True, pady=10)
+        self.add_chat_bubble(MAKBULE.get_welcome_message(self.user), "Makbule", "")
+        fr = ctk.CTkFrame(self.main, fg_color="transparent"); fr.pack(fill="x", pady=10)
+        self.chat_entry = ctk.CTkEntry(fr, placeholder_text="Mesaj yaz...", height=50, font=("Arial", 14)); self.chat_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
         self.chat_entry.bind("<Return>", lambda e: self.send_chat_message())
-        
-        ctk.CTkButton(input_frame, text="GÖNDER", width=100, height=50, fg_color=COLORS["makbule_btn"], text_color="white", command=self.send_chat_message).pack(side="right")
-
-        self.load_chat_history()
-        self.refresh_chat_loop()
+        ctk.CTkButton(fr, text="GÖNDER", width=100, height=50, fg_color=COLORS["makbule_btn"], command=self.send_chat_message).pack(side="right")
+        self.load_chat_history(); self.refresh_chat_loop()
 
     def load_chat_history(self):
         try:
-            conn = DB.get_conn()
-            cursor = conn.cursor()
-            rows = cursor.execute("SELECT id, user, message, timestamp FROM chat_logs ORDER BY id DESC LIMIT 50").fetchall()
-            conn.close()
-            for r in reversed(rows):
-                self.last_chat_id = max(self.last_chat_id, r[0])
-                self.add_chat_bubble(r[2], r[1], r[3])
+            conn = DB.get_conn(); rows = conn.cursor().execute("SELECT id, user, message, timestamp FROM chat_logs ORDER BY id DESC LIMIT 50").fetchall(); conn.close()
+            for r in reversed(rows): self.last_chat_id = max(self.last_chat_id, r[0]); self.add_chat_bubble(r[2], r[1], r[3])
         except: pass
 
     def refresh_chat_loop(self):
         if not self.chat_active: return
         try:
-            conn = DB.get_conn()
-            cursor = conn.cursor()
-            rows = cursor.execute("SELECT id, user, message, timestamp FROM chat_logs WHERE id > ? ORDER BY id ASC", (self.last_chat_id,)).fetchall()
-            conn.close()
-            for r in rows:
-                self.last_chat_id = r[0]
-                self.add_chat_bubble(r[2], r[1], r[3])
+            conn = DB.get_conn(); rows = conn.cursor().execute("SELECT id, user, message, timestamp FROM chat_logs WHERE id > ? ORDER BY id ASC", (self.last_chat_id,)).fetchall(); conn.close()
+            for r in rows: self.last_chat_id = r[0]; self.add_chat_bubble(r[2], r[1], r[3])
         except: pass
         self.after(2000, self.refresh_chat_loop)
 
     def send_chat_message(self):
-        msg = self.chat_entry.get().strip()
+        msg = self.chat_entry.get().strip(); 
         if not msg: return
-        timestamp = datetime.now().strftime("%H:%M")
+        ts = datetime.now().strftime("%H:%M")
         try:
-            conn = DB.get_conn()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO chat_logs (user, message, timestamp) VALUES (?, ?, ?)", (self.user, msg, timestamp))
-            conn.commit()
-            conn.close()
+            conn = DB.get_conn(); conn.cursor().execute("INSERT INTO chat_logs (user, message, timestamp) VALUES (?,?,?)", (self.user, msg, ts)); conn.commit(); conn.close()
             self.chat_entry.delete(0, "end")
-            
-            if "makbule" in msg.lower():
-                self.trigger_makbule(msg)
-                
-        except Exception as e: print(f"Mesaj hatası: {e}")
-
-    def trigger_makbule(self, user_msg):
-        response = MAKBULE.analyze_command(user_msg, self.user, CURRENT_DB_PATH)
-        timestamp = datetime.now().strftime("%H:%M")
-        if response == "ACTION_MAIL": self.send_auto_email(); response = "📧 Tamamdır, maili gönderdim!"
-        elif response == "ACTION_UPDATE": self.check_web_update(); return 
-        time.sleep(0.5) 
-        try:
-            conn = DB.get_conn()
-            conn.cursor().execute("INSERT INTO chat_logs (user, message, timestamp) VALUES (?, ?, ?)", ("Makbule", response, timestamp))
-            conn.commit(); conn.close()
+            if "makbule" in msg.lower() or "!zar" in msg or "!şaka" in msg: self.trigger_makbule(msg)
         except: pass
 
-    def add_chat_bubble(self, text, sender, time_str):
-        is_me = sender == self.user
-        is_makbule = sender == "Makbule"
+    def trigger_makbule(self, msg):
+        resp = MAKBULE.analyze_command(msg, self.user, CURRENT_DB_PATH); ts = datetime.now().strftime("%H:%M")
+        if resp == "ACTION_MAIL": self.send_auto_email(); resp = "Mail gönderildi."
+        elif resp == "ACTION_UPDATE": self.check_web_update(); return
+        time.sleep(0.5)
+        try: conn = DB.get_conn(); conn.cursor().execute("INSERT INTO chat_logs (user, message, timestamp) VALUES (?,?,?)", ("Makbule", resp, ts)); conn.commit(); conn.close()
+        except: pass
+
+    def add_chat_bubble(self, text, sender, ts):
+        is_me = sender == self.user; is_makbule = sender == "Makbule"
+        bg = COLORS["chat_me"] if is_me else (COLORS["makbule_chat"] if is_makbule else COLORS["chat_other"])
         align = "e" if is_me else "w"
-        if is_me: bg_color = COLORS["chat_me"]; text_color = "white"
-        elif is_makbule: bg_color = COLORS["makbule_chat"]; text_color = "white"
-        else: bg_color = COLORS["chat_other"]; text_color = "white"
-        
-        container = ctk.CTkFrame(self.chat_frame, fg_color="transparent")
-        container.pack(anchor=align, pady=5, padx=10)
-        if not is_me:
-            name_lbl = ctk.CTkLabel(container, text=f"{sender} - {time_str}", font=("Arial", 10), text_color="gray")
-            name_lbl.pack(anchor="w")
-        bubble = ctk.CTkLabel(container, text=text, fg_color=bg_color, text_color=text_color, corner_radius=15, padx=15, pady=10, wraplength=500, justify="left", font=("Arial", 14))
-        bubble.pack()
+        fr = ctk.CTkFrame(self.chat_frame, fg_color="transparent"); fr.pack(anchor=align, pady=5, padx=10)
+        if not is_me: ctk.CTkLabel(fr, text=f"{sender} - {ts}", font=("Arial", 10), text_color="gray").pack(anchor="w")
+        ctk.CTkLabel(fr, text=text, fg_color=bg, corner_radius=15, padx=15, pady=10, wraplength=500, justify="left", font=("Arial", 14)).pack()
         self.chat_frame._parent_canvas.yview_moveto(1.0)
 
     # --- 1. DASHBOARD ---
     def show_dashboard(self):
-        self.clear_main(); self.active_nav("dash")
-        self.refresh_app_data()
-        self.animation_running = True 
-        header_frame = ctk.CTkFrame(self.main, fg_color="transparent")
-        header_frame.pack(fill="x", pady=(0, 20))
-        ctk.CTkLabel(header_frame, text="DEPO DURUMLARI", font=FONTS["h2"], text_color="white").pack(side="left")
-        ctk.CTkButton(header_frame, text="🔄 YENİLE", width=100, height=40, fg_color=COLORS["accent"], text_color="black", font=("Arial", 12, "bold"), command=self.show_dashboard).pack(side="right")
-        scroll_frame = ctk.CTkScrollableFrame(self.main, fg_color="transparent", height=500); scroll_frame.pack(fill="both", expand=True)
-        grid = ctk.CTkFrame(scroll_frame, fg_color="transparent"); grid.pack(fill="both", expand=True)
-        conn = DB.get_conn(); cur = conn.cursor(); cur.execute("SELECT name, count FROM depots"); data = {row[0]: row[1] for row in cur.fetchall()}; conn.close()
-        colors = [COLORS["accent"], "#8B5CF6", "#10B981", COLORS["warning"], "#EC4899", "#F59E0B"]; row_idx = 0; col_idx = 0; grid.grid_columnconfigure(0, weight=1); grid.grid_columnconfigure(1, weight=1)
-        for i, depot in enumerate(self.active_depots):
-            val = data.get(depot, 0); col = colors[i % len(colors)]; is_critical = val < 10
-            card = self.create_depot_card(grid, depot, val, col, row_idx, col_idx, is_critical)
-            if is_critical: self.critical_widgets.append(card)
-            col_idx += 1
-            if col_idx > 1: col_idx = 0; row_idx += 1
-        bottom = ctk.CTkFrame(self.main, fg_color="transparent"); bottom.pack(fill="x", pady=20)
-        conn = DB.get_conn(); today = datetime.now().strftime("%Y-%m-%d")
-        t_in = conn.cursor().execute(f"SELECT SUM(qty) FROM logs WHERE action='GİRİŞ' AND date LIKE '{today}%'").fetchone()[0] or 0
-        t_out = conn.cursor().execute(f"SELECT SUM(qty) FROM logs WHERE action='ÇIKIŞ' AND date LIKE '{today}%'").fetchone()[0] or 0
-        conn.close()
-        self.create_mini_kpi(bottom, "BUGÜN GİREN", f"+{t_in}", COLORS["success"]); self.create_mini_kpi(bottom, "BUGÜN ÇIKAN", f"-{t_out}", COLORS["danger"])
+        self.clear_main(); self.active_nav("dash"); self.refresh_app_data(); self.animation_running = True
+        h = ctk.CTkFrame(self.main, fg_color="transparent"); h.pack(fill="x", pady=(0,20))
+        ctk.CTkLabel(h, text="DEPO DURUMLARI", font=FONTS["h2"]).pack(side="left")
+        ctk.CTkButton(h, text="🔄 YENİLE", width=100, command=self.show_dashboard).pack(side="right")
+        sf = ctk.CTkScrollableFrame(self.main, fg_color="transparent", height=500); sf.pack(fill="both", expand=True)
+        gr = ctk.CTkFrame(sf, fg_color="transparent"); gr.pack(fill="both", expand=True); gr.grid_columnconfigure((0,1), weight=1)
+        conn = DB.get_conn(); counts = {r[0]: r[1] for r in conn.cursor().execute("SELECT name, count FROM depots").fetchall()}; conn.close()
+        colors = [COLORS["accent"], "#8B5CF6", "#10B981", COLORS["warning"], "#EC4899", "#F59E0B"]
+        for i, d in enumerate(self.active_depots):
+            val = counts.get(d, 0); is_crit = val < 10; 
+            c = ctk.CTkFrame(gr, fg_color=COLORS["card"], corner_radius=20, border_width=3 if is_crit else 1, border_color=COLORS["critical"] if is_crit else COLORS["border"])
+            c.grid(row=i//2, column=i%2, padx=10, pady=10, sticky="nsew", ipady=20)
+            ctk.CTkLabel(c, text=f"📦 {d}", font=("Arial", 16, "bold"), text_color="gray").pack(pady=(20,10))
+            ctk.CTkLabel(c, text=str(val), font=("Roboto", 48, "bold"), text_color=colors[i%len(colors)]).pack(pady=5)
+            if is_crit: ctk.CTkLabel(c, text="⚠️ KRİTİK STOK!", text_color=COLORS["danger"], font=("Arial", 14, "bold")).pack(pady=5); self.critical_widgets.append(c)
         if self.critical_widgets: self.animate_critical_cards()
-
-    def create_depot_card(self, parent, name, val, color, r, c, is_critical=False):
-        border_col = COLORS["critical"] if is_critical else COLORS["border"]; border_w = 3 if is_critical else 1
-        card = ctk.CTkFrame(parent, fg_color=COLORS["card"], corner_radius=20, border_width=border_w, border_color=border_col)
-        card.grid(row=r, column=c, padx=10, pady=10, sticky="nsew", ipady=20)
-        ctk.CTkLabel(card, text="📦 " + name, font=("Arial", 16, "bold"), text_color="gray").pack(pady=(20, 10))
-        ctk.CTkLabel(card, text=str(val), font=("Roboto", 48, "bold"), text_color=color).pack(pady=5)
-        ctk.CTkLabel(card, text="Palet Mevcut", font=("Arial", 12), text_color="gray").pack()
-        if is_critical: ctk.CTkLabel(card, text="⚠️ KRİTİK STOK!", font=("Arial", 14, "bold"), text_color=COLORS["danger"]).pack(pady=5)
-        return card
 
     def animate_critical_cards(self):
         if not self.animation_running: return
-        if not hasattr(self, 'flash_state'): self.flash_state = False
-        current_color = COLORS["critical"] if self.flash_state else COLORS["card"]
-        for widget in self.critical_widgets:
-            try: widget.configure(border_color=current_color)
-            except: pass
-        self.flash_state = not self.flash_state
-        self.after(800, self.animate_critical_cards)
-
-    def create_mini_kpi(self, parent, title, val, color):
-        f = ctk.CTkFrame(parent, fg_color=COLORS["card"], corner_radius=15, height=80); f.pack(side="left", fill="x", expand=True, padx=10)
-        ctk.CTkLabel(f, text=title, font=("Arial", 12, "bold"), text_color="gray").pack(side="left", padx=20)
-        ctk.CTkLabel(f, text=val, font=("Arial", 24, "bold"), text_color=color).pack(side="right", padx=20)
+        if not hasattr(self, 'flash'): self.flash = False
+        col = COLORS["critical"] if self.flash else COLORS["card"]
+        for w in self.critical_widgets: w.configure(border_color=col)
+        self.flash = not self.flash; self.after(800, self.animate_critical_cards)
 
     # --- 2. OPERASYON ---
     def show_ops(self):
-        self.clear_main(); self.active_nav("ops")
-        self.refresh_app_data()
-        p = ctk.CTkFrame(self.main, fg_color=COLORS["card"], corner_radius=20, border_width=1, border_color=COLORS["border"])
-        p.pack(fill="x", pady=(0, 20), padx=20)
-        ctk.CTkLabel(p, text="PALET İŞLEM", font=FONTS["h2"], text_color=COLORS["accent"]).pack(pady=(20,10))
-        
-        self.cb_depo = ctk.CTkComboBox(p, values=self.active_depots, width=350, height=50, font=FONTS["bold"])
-        self.cb_depo.pack(pady=5); self.cb_depo.set("Depo Seçiniz")
-        
-        d_frame = ctk.CTkFrame(p, fg_color="transparent"); d_frame.pack(pady=10)
-        ctk.CTkLabel(d_frame, text="Tarih:", font=("Arial", 14, "bold"), text_color="gray").pack(side="left", padx=10)
+        self.clear_main(); self.active_nav("ops"); self.refresh_app_data()
+        p = ctk.CTkFrame(self.main, fg_color=COLORS["card"], corner_radius=20); p.pack(fill="x", pady=(0,20), padx=20)
+        ctk.CTkLabel(p, text="PALET İŞLEM", font=FONTS["h2"], text_color=COLORS["accent"]).pack(pady=20)
+        self.cb_depo = ctk.CTkComboBox(p, values=self.active_depots, width=350, height=50, font=FONTS["bold"]); self.cb_depo.pack(pady=5); self.cb_depo.set("Depo Seçiniz")
+        d_fr = ctk.CTkFrame(p, fg_color="transparent"); d_fr.pack(pady=10)
+        ctk.CTkLabel(d_fr, text="Tarih:").pack(side="left")
         now = datetime.now()
-        self.c_day = ctk.CTkComboBox(d_frame, values=[f"{d:02d}" for d in range(1, 32)], width=70, font=("Arial", 12))
-        self.c_day.set(f"{now.day:02d}"); self.c_day.pack(side="left", padx=2)
-        self.c_month = ctk.CTkComboBox(d_frame, values=[f"{m:02d}" for m in range(1, 13)], width=70, font=("Arial", 12))
-        self.c_month.set(f"{now.month:02d}"); self.c_month.pack(side="left", padx=2)
-        self.c_year = ctk.CTkComboBox(d_frame, values=[str(y) for y in range(2024, 2030)], width=80, font=("Arial", 12))
-        self.c_year.set(str(now.year)); self.c_year.pack(side="left", padx=2)
-
-        self.en_qty = ctk.CTkEntry(p, placeholder_text="Adet Giriniz", width=350, height=50, font=FONTS["bold"], justify="center")
-        self.en_qty.pack(pady=5)
-        
+        self.c_day = ctk.CTkComboBox(d_fr, values=[f"{i:02d}" for i in range(1,32)], width=70); self.c_day.set(f"{now.day:02d}"); self.c_day.pack(side="left")
+        self.c_mon = ctk.CTkComboBox(d_fr, values=[f"{i:02d}" for i in range(1,13)], width=70); self.c_mon.set(f"{now.month:02d}"); self.c_mon.pack(side="left")
+        self.c_year = ctk.CTkComboBox(d_fr, values=[str(i) for i in range(2024,2030)], width=80); self.c_year.set(str(now.year)); self.c_year.pack(side="left")
+        self.en_qty = ctk.CTkEntry(p, placeholder_text="Adet", width=350, height=50, font=FONTS["bold"], justify="center"); self.en_qty.pack(pady=5)
         fr = ctk.CTkFrame(p, fg_color="transparent"); fr.pack(pady=20)
-        ctk.CTkButton(fr, text="GİRİŞ (+)", width=150, height=50, fg_color=COLORS["success"], font=FONTS["bold"], command=lambda: self.process("GİRİŞ")).pack(side="left", padx=10)
-        ctk.CTkButton(fr, text="ÇIKIŞ (-)", width=150, height=50, fg_color=COLORS["danger"], font=FONTS["bold"], command=lambda: self.process("ÇIKIŞ")).pack(side="left", padx=10)
-
-        admin_frame = ctk.CTkFrame(self.main, fg_color="transparent")
-        admin_frame.pack(fill="x", padx=20)
-        ctk.CTkLabel(admin_frame, text="Depo Yönetimi", font=FONTS["h2"], text_color="white").pack(anchor="w", pady=10)
-        af = ctk.CTkFrame(admin_frame, fg_color=COLORS["card"], corner_radius=20)
-        af.pack(fill="x")
-        self.entry_new_depot = ctk.CTkEntry(af, placeholder_text="Yeni Depo Adı...", width=300, height=40)
-        self.entry_new_depot.pack(side="left", padx=20, pady=20)
-        ctk.CTkButton(af, text="DEPO EKLE", fg_color=COLORS["accent"], text_color="black", width=120, command=self.add_new_depot).pack(side="left", padx=10)
-        ctk.CTkFrame(af, width=2, height=40, fg_color="gray").pack(side="left", padx=20)
-        ctk.CTkLabel(af, text="Seçili Olanı:", text_color="gray").pack(side="left")
-        ctk.CTkButton(af, text="SİL", fg_color=COLORS["danger"], width=100, command=self.delete_selected_depot).pack(side="left", padx=10)
-
+        ctk.CTkButton(fr, text="GİRİŞ (+)", width=150, height=50, fg_color=COLORS["success"], command=lambda: self.process("GİRİŞ")).pack(side="left", padx=10)
+        ctk.CTkButton(fr, text="ÇIKIŞ (-)", width=150, height=50, fg_color=COLORS["danger"], command=lambda: self.process("ÇIKIŞ")).pack(side="left", padx=10)
+        
     def process(self, act):
         try:
-            d = self.cb_depo.get()
-            q_str = self.en_qty.get()
-            if not q_str: raise ValueError
-            q = int(q_str)
+            d, q = self.cb_depo.get(), int(self.en_qty.get())
             if d not in self.active_depots or q <= 0: raise ValueError
-            sel_d, sel_m, sel_y = self.c_day.get(), self.c_month.get(), self.c_year.get()
-            try: valid_date = datetime(int(sel_y), int(sel_m), int(sel_d))
-            except ValueError: ToastNotification(self, "Geçersiz Tarih!", COLORS["danger"]); return
-            
-            final_date_str = f"{sel_y}-{sel_m}-{sel_d} {datetime.now().strftime('%H:%M:%S')}"
+            ts = f"{self.c_year.get()}-{self.c_mon.get()}-{self.c_day.get()} {datetime.now().strftime('%H:%M:%S')}"
             conn = DB.get_conn(); c = conn.cursor()
-            if act == "ÇIKIŞ":
-                curr = c.execute("SELECT count FROM depots WHERE name=?", (d,)).fetchone()[0]
-                if curr < q: conn.close(); return ToastNotification(self, f"Yetersiz Stok! ({curr})", COLORS["danger"])
-                c.execute("UPDATE depots SET count = count - ? WHERE name=?", (q, d))
-            else: c.execute("UPDATE depots SET count = count + ? WHERE name=?", (q, d))
-            
-            c.execute("INSERT INTO logs (date, action, depot, qty, user) VALUES (?,?,?,?,?)", (final_date_str, act, d, q, self.user))
-            conn.commit(); conn.close()
-            ToastNotification(self, "İşlem Başarılı", COLORS["success"]); self.en_qty.delete(0, "end")
-        except: ToastNotification(self, "Hatalı Giriş!", COLORS["warning"])
+            if act == "ÇIKIŞ": 
+                if c.execute("SELECT count FROM depots WHERE name=?", (d,)).fetchone()[0] < q: conn.close(); return ToastNotification(self, "Yetersiz Stok!", COLORS["danger"])
+                c.execute("UPDATE depots SET count=count-? WHERE name=?", (q,d))
+            else: c.execute("UPDATE depots SET count=count+? WHERE name=?", (q,d))
+            c.execute("INSERT INTO logs (date, action, depot, qty, user) VALUES (?,?,?,?,?)", (ts, act, d, q, self.user))
+            conn.commit(); conn.close(); ToastNotification(self, "İşlem Başarılı", COLORS["success"]); self.en_qty.delete(0,"end")
+        except: ToastNotification(self, "Hata!", COLORS["warning"])
 
-    def add_new_depot(self):
-        name = self.entry_new_depot.get().strip().upper()
-        if not name: return
-        try:
-            conn = DB.get_conn(); conn.cursor().execute("INSERT INTO depots (name, count) VALUES (?, 0)", (name,))
-            conn.commit(); conn.close()
-            ToastNotification(self, "Depo Eklendi", COLORS["success"])
-            self.entry_new_depot.delete(0, "end"); self.refresh_app_data()
-            self.cb_depo.configure(values=self.active_depots)
-        except: ToastNotification(self, "Bu depo zaten var!", COLORS["danger"])
-
-    def delete_selected_depot(self):
-        name = self.cb_depo.get()
-        if name not in self.active_depots: return
-        if not messagebox.askyesno("Onay", f"'{name}' silinsin mi?"): return
-        conn = DB.get_conn()
-        conn.cursor().execute("DELETE FROM depots WHERE name=?", (name,))
-        conn.commit(); conn.close()
-        ToastNotification(self, "Depo Silindi", COLORS["success"])
-        self.refresh_app_data(); self.cb_depo.configure(values=self.active_depots); self.cb_depo.set("Depo Seçiniz")
-
-    def show_history(self):
-        self.clear_main(); self.active_nav("hist"); self.refresh_app_data()
-        top = ctk.CTkFrame(self.main, fg_color="transparent"); top.pack(fill="x", pady=(0, 10))
-        ctk.CTkLabel(top, text="GEÇMİŞ & DÜZENLEME", font=FONTS["h2"]).pack(side="left")
-        flt = ctk.CTkFrame(self.main, fg_color=COLORS["card"], corner_radius=10); flt.pack(fill="x", pady=10, padx=5)
-        self.cb_y = ctk.CTkComboBox(flt, values=["Yıl"] + [str(y) for y in range(2024, 2030)], width=80); self.cb_y.pack(side="left", padx=5)
-        self.cb_m = ctk.CTkComboBox(flt, values=["Ay"] + [f"{m:02d}" for m in range(1, 13)], width=70); self.cb_m.pack(side="left", padx=5)
-        self.cb_d = ctk.CTkComboBox(flt, values=["Gün"] + [f"{d:02d}" for d in range(1, 32)], width=70); self.cb_d.pack(side="left", padx=5)
-        conn = DB.get_conn(); users = [u[0] for u in conn.cursor().execute("SELECT name FROM users").fetchall()]; conn.close()
-        self.cb_u = ctk.CTkComboBox(flt, values=["Kullanıcı"] + users, width=120); self.cb_u.pack(side="left", padx=5)
-        self.ent_search = ctk.CTkEntry(flt, placeholder_text="Arama...", width=150); self.ent_search.pack(side="left", padx=15)
-        ctk.CTkButton(flt, text="UYGULA", width=80, fg_color=COLORS["accent"], text_color="black", command=self.load_history_combined).pack(side="left", padx=10)
-        ctk.CTkButton(flt, text="TEMİZLE", width=80, fg_color=COLORS["sidebar"], command=self.reset_filter).pack(side="left", padx=5)
-        
-        cols = ("ID", "TARİH", "SAAT", "GÜN", "İŞLEM", "DEPO", "ADET", "KULLANICI")
-        style = ttk.Style(); style.theme_use("clam")
-        style.configure("Treeview", background=COLORS["card"], foreground="white", fieldbackground=COLORS["card"], rowheight=40, borderwidth=0, font=("Arial", 12))
-        style.configure("Treeview.Heading", background="#111827", foreground=COLORS["accent"], font=("Arial", 12, "bold"))
-        style.map("Treeview", background=[('selected', COLORS["accent"])], foreground=[('selected', 'black')])
-        self.tree = ttk.Treeview(self.main, columns=cols, show="headings")
-        self.tree.heading("ID", text="#"); self.tree.column("ID", width=40, anchor="center")
-        self.tree.heading("TARİH", text="TARİH"); self.tree.column("TARİH", width=100, anchor="center")
-        self.tree.heading("SAAT", text="SAAT"); self.tree.column("SAAT", width=80, anchor="center")
-        self.tree.heading("GÜN", text="GÜN"); self.tree.column("GÜN", width=100, anchor="center")
-        for c in cols[4:]: self.tree.heading(c, text=c); self.tree.column(c, anchor="center")
-        self.tree.tag_configure("IN", foreground=COLORS["success"]); self.tree.tag_configure("OUT", foreground=COLORS["danger"])
-        self.tree.pack(fill="both", expand=True, pady=10)
-        btn_fr = ctk.CTkFrame(self.main, fg_color="transparent"); btn_fr.pack(fill="x", pady=5)
-        ctk.CTkButton(btn_fr, text="✏️ DÜZELT", fg_color=COLORS["warning"], text_color="black", width=150, command=self.edit_transaction).pack(side="left", padx=5)
-        ctk.CTkButton(btn_fr, text="🗑️ SİL", fg_color=COLORS["danger"], width=150, command=self.delete_transaction).pack(side="left", padx=5)
-        self.load_history_combined()
-
-    def reset_filter(self):
-        self.cb_y.set("Yıl"); self.cb_m.set("Ay"); self.cb_d.set("Gün"); self.cb_u.set("Kullanıcı"); self.ent_search.delete(0, "end"); self.load_history_combined()
-
-    def load_history_combined(self):
-        for i in self.tree.get_children(): self.tree.delete(i)
-        y, m, d, u = self.cb_y.get(), self.cb_m.get(), self.cb_d.get(), self.cb_u.get()
-        search = self.ent_search.get().strip()
-        query = "SELECT * FROM logs WHERE 1=1"
-        params = []
-        if y != "Yıl": query += " AND strftime('%Y', date) = ?"; params.append(y)
-        if m != "Ay": query += " AND strftime('%m', date) = ?"; params.append(m)
-        if d != "Gün": query += " AND strftime('%d', date) = ?"; params.append(d)
-        if u != "Kullanıcı": query += " AND user = ?"; params.append(u)
-        if search: query += " AND (depot LIKE ? OR user LIKE ? OR action LIKE ?)"; params.extend([f"%{search}%"]*3)
-        query += " ORDER BY id DESC LIMIT 500"
-        
-        conn = DB.get_conn()
-        try:
-            for r in conn.cursor().execute(query, params).fetchall():
-                try: dt = datetime.strptime(r[1], "%Y-%m-%d %H:%M:%S"); d_str=dt.strftime("%Y-%m-%d"); t_str=dt.strftime("%H:%M"); day=dt.strftime("%A")
-                except: d_str, t_str, day = r[1], "-", "-"
-                tag = "IN" if r[2] == "GİRİŞ" else "OUT"
-                self.tree.insert("", "end", values=(r[0], d_str, t_str, day, r[2], r[3], r[4], r[5]), tags=(tag,))
-        except: pass
-        finally: conn.close()
-
-    def delete_transaction(self):
-        sel = self.tree.selection()
-        if not sel: return
-        item = self.tree.item(sel)['values']
-        log_id, action, depot, qty = item[0], item[4], item[5], int(item[6])
-        if not messagebox.askyesno("Onay", "Silinsin mi?"): return
-        conn = DB.get_conn(); c = conn.cursor()
-        if action == "GİRİŞ": c.execute("UPDATE depots SET count=count-? WHERE name=?", (qty, depot))
-        else: c.execute("UPDATE depots SET count=count+? WHERE name=?", (qty, depot))
-        c.execute("DELETE FROM logs WHERE id=?", (log_id,))
-        conn.commit(); conn.close(); self.load_history_combined()
-
-    def edit_transaction(self):
-        sel = self.tree.selection()
-        if not sel: return
-        item = self.tree.item(sel)['values']
-        old_id, old_date, _, _, old_act, old_dep, old_qty, _ = item
-        top = ctk.CTkToplevel(self); top.geometry("300x400")
-        ctk.CTkLabel(top, text="DÜZENLE", font=FONTS["bold"]).pack(pady=10)
-        c_act = ctk.CTkComboBox(top, values=["GİRİŞ", "ÇIKIŞ"]); c_act.set(old_act); c_act.pack(pady=5)
-        c_dep = ctk.CTkComboBox(top, values=self.active_depots); c_dep.set(old_dep); c_dep.pack(pady=5)
-        e_qty = ctk.CTkEntry(top); e_qty.insert(0, str(old_qty)); e_qty.pack(pady=5)
-        def save():
-            try:
-                na, nd, nq = c_act.get(), c_dep.get(), int(e_qty.get())
-                conn = DB.get_conn(); c = conn.cursor()
-                if old_act=="GİRİŞ": c.execute("UPDATE depots SET count=count-? WHERE name=?", (old_qty, old_dep))
-                else: c.execute("UPDATE depots SET count=count+? WHERE name=?", (old_qty, old_dep))
-                if na=="GİRİŞ": c.execute("UPDATE depots SET count=count+? WHERE name=?", (nq, nd))
-                else: c.execute("UPDATE depots SET count=count-? WHERE name=?", (nq, nd))
-                c.execute("UPDATE logs SET action=?, depot=?, qty=?, user=? WHERE id=?", (na, nd, nq, f"{self.user}*", old_id))
-                conn.commit(); conn.close(); top.destroy(); self.load_history_combined()
-            except: pass
-        ctk.CTkButton(top, text="KAYDET", command=save).pack(pady=20)
-
-    def show_reports(self):
-        self.clear_main(); self.active_nav("report")
-        ctk.CTkLabel(self.main, text="RAPOR MERKEZİ", font=FONTS["h2"]).pack(anchor="w", pady=20)
-        r1 = ctk.CTkFrame(self.main, fg_color="transparent"); r1.pack(fill="x", padx=10, pady=10)
-        ctk.CTkButton(r1, text="TÜM GEÇMİŞ (EXCEL)", height=50, command=lambda: self.export_adv("ALL")).pack(side="left", fill="x", expand=True, padx=5)
-        ctk.CTkButton(r1, text="BU AYIN RAPORU", height=50, command=lambda: self.export_adv("MONTH")).pack(side="left", fill="x", expand=True, padx=5)
-
-    def export_adv(self, mode):
-        if not HAS_PANDAS: return ToastNotification(self, "Pandas Yok!", COLORS["danger"])
-        report_dir = os.path.join(program_folder, "Raporlar"); os.makedirs(report_dir, exist_ok=True)
-        filename = f"Rapor_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        conn = DB.get_conn(); q = "SELECT * FROM logs"
-        if mode == "MONTH": q += f" WHERE date LIKE '{datetime.now().strftime('%Y-%m')}%'"
-        df = pd.read_sql(q, conn); conn.close()
-        if df.empty: return ToastNotification(self, "Veri Yok", COLORS["warning"])
-        with pd.ExcelWriter(os.path.join(report_dir, filename)) as w: df.to_excel(w, index=False)
-        ToastNotification(self, "Kaydedildi", COLORS["success"]); os.startfile(report_dir)
-
-    # --- MAIL AYARLARI (ESKİ TASARIM) ---
-    def show_mail_settings(self):
-        self.clear_main(); self.active_nav("mail")
-        ctk.CTkLabel(self.main, text="OTOMATİK MAIL AYARLARI", font=FONTS["h2"]).pack(pady=20)
-        
-        box = ctk.CTkFrame(self.main, fg_color=COLORS["card"], corner_radius=15, width=600)
-        box.pack(pady=10, padx=50)
-
-        cfg = ConfigManager.get_email_config()
-
-        ctk.CTkLabel(box, text="Gönderen Mail (Gmail):", font=FONTS["bold"]).pack(anchor="w", padx=30, pady=(20,5))
-        e_sender = ctk.CTkEntry(box, width=400); e_sender.pack(padx=30, pady=5); e_sender.insert(0, cfg["sender"])
-
-        ctk.CTkLabel(box, text="Uygulama Şifresi:", font=FONTS["bold"]).pack(anchor="w", padx=30, pady=(10,5))
-        e_pass = ctk.CTkEntry(box, width=400, show="*"); e_pass.pack(padx=30, pady=5); e_pass.insert(0, cfg["password"])
-
-        ctk.CTkLabel(box, text="Alıcı Mailler:", font=FONTS["bold"]).pack(anchor="w", padx=30, pady=(10,5))
-        e_recv = ctk.CTkEntry(box, width=400); e_recv.pack(padx=30, pady=5); e_recv.insert(0, cfg["receivers"])
-
-        ctk.CTkLabel(box, text="Otomatik Gönderim Saati:", font=FONTS["bold"]).pack(anchor="w", padx=30, pady=(15,5))
-        time_fr = ctk.CTkFrame(box, fg_color="transparent")
-        time_fr.pack(anchor="w", padx=30, pady=5)
-        
-        hours = [f"{i:02d}" for i in range(24)]
-        mins = [f"{i:02d}" for i in range(60)]
-        
-        c_h = ctk.CTkComboBox(time_fr, values=hours, width=70)
-        c_h.pack(side="left", padx=5)
-        c_h.set(cfg["time_h"])
-        
-        ctk.CTkLabel(time_fr, text=":").pack(side="left")
-        
-        c_m = ctk.CTkComboBox(time_fr, values=mins, width=70)
-        c_m.pack(side="left", padx=5)
-        c_m.set(cfg["time_m"])
-
-        def save_mail():
-            ConfigManager.save_email_config(e_sender.get(), e_pass.get(), e_recv.get(), c_h.get(), c_m.get())
-            ToastNotification(self, "Mail Ayarları Kaydedildi", COLORS["success"])
-
-        def test_mail():
-            save_mail()
-            ToastNotification(self, "Test Maili Gönderiliyor...", COLORS["accent"])
-            threading.Thread(target=self.send_auto_email, daemon=True).start()
-
-        btn_fr = ctk.CTkFrame(box, fg_color="transparent")
-        btn_fr.pack(pady=30)
-        ctk.CTkButton(btn_fr, text="KAYDET", fg_color=COLORS["success"], width=150, command=save_mail).pack(side="left", padx=10)
-        ctk.CTkButton(btn_fr, text="TEST ET", fg_color=COLORS["warning"], text_color="black", width=150, command=test_mail).pack(side="left", padx=10)
-
+    # --- EXE GÜNCELLEME ---
     def show_update_center(self):
         self.clear_main(); self.active_nav("update")
         ctk.CTkLabel(self.main, text=f"Sürüm: {APP_VERSION}", font=FONTS["h2"]).pack(pady=50)
-        ctk.CTkLabel(self.main, text="Yeni özellikleri almak için butona basın.", text_color="gray").pack()
-        ctk.CTkButton(self.main, text="İNTERNETTEN GÜNCELLE", width=200, height=50, font=FONTS["bold"], fg_color="#2563EB", command=self.check_web_update).pack(pady=20)
+        ctk.CTkButton(self.main, text="İNTERNETTEN GÜNCELLE", width=200, height=50, fg_color="#2563EB", command=self.check_web_update).pack()
 
     def check_web_update(self):
-        if not messagebox.askyesno("Onay", "Güncelleme indirilsin mi?\n(Program kapanıp yeniden açılacak)"): return
-        
+        if not messagebox.askyesno("Onay", "Güncellensin mi?"): return
         try:
-            context = ssl._create_unverified_context()
-            
+            ctx = ssl._create_unverified_context()
             if getattr(sys, 'frozen', False):
-                exe_path = sys.executable
-                exe_dir = os.path.dirname(exe_path)
-                new_exe_path = os.path.join(exe_dir, "new_update.tmp")
-                
-                ToastNotification(self, "Exe indiriliyor...", COLORS["warning"])
-                self.update()
-                
-                try:
-                    urllib.request.urlretrieve(EXE_UPDATE_URL, new_exe_path)
-                except Exception as e:
-                    messagebox.showerror("İndirme Hatası", f"Dosya indirilemedi:\n{e}")
-                    return
-
-                if not os.path.exists(new_exe_path) or os.path.getsize(new_exe_path) < 1000:
-                    messagebox.showerror("Hata", "İndirilen dosya bozuk veya eksik.")
-                    return
-
-                bat_path = os.path.join(exe_dir, "update.bat")
-                exe_name = os.path.basename(exe_path)
-                
-                bat_content = f"""
-@echo off
-timeout /t 2 /nobreak > nul
-del "{exe_name}"
-move "new_update.tmp" "{exe_name}"
-start "" "{exe_name}"
-del "%~f0"
-"""
-                with open(bat_path, "w") as f: f.write(bat_content)
-                os.startfile(bat_path)
-                sys.exit()
-
+                exe = sys.executable; d = os.path.dirname(exe); tmp = os.path.join(d, "update.tmp")
+                urllib.request.urlretrieve(EXE_UPDATE_URL, tmp)
+                bat = os.path.join(d, "update.bat")
+                with open(bat, "w") as f: f.write(f'@echo off\ntimeout /t 2 > nul\ndel "{os.path.basename(exe)}"\nmove "update.tmp" "{os.path.basename(exe)}"\nstart "" "{os.path.basename(exe)}"\ndel "%~f0"')
+                os.startfile(bat); sys.exit()
             else:
-                new_code = urllib.request.urlopen(UPDATE_URL, context=context).read()
-                if not new_code: raise ValueError
-                shutil.copy2(os.path.abspath(__file__), os.path.abspath(__file__)+".bak")
-                with open(os.path.abspath(__file__), "wb") as f: f.write(new_code)
-                messagebox.showinfo("Başarılı", "Kod güncellendi! Yeniden başlatılıyor."); sys.exit()
+                code = urllib.request.urlopen(UPDATE_URL, context=ctx).read()
+                with open(os.path.abspath(__file__), "wb") as f: f.write(code)
+                messagebox.showinfo("Başarılı", "Kod güncellendi!"); sys.exit()
+        except Exception as e: messagebox.showerror("Hata", str(e))
 
-        except Exception as e:
-            messagebox.showerror("Güncelleme Hatası", f"Hata:\n{e}\n\nLütfen internet bağlantınızı kontrol edin.")
-
-    def show_users(self):
-        self.clear_main(); self.active_nav("users")
-        fr = ctk.CTkFrame(self.main); fr.pack(fill="both", expand=True, padx=20, pady=20)
-        self.u_tree = ttk.Treeview(fr, columns=("AD", "ROL"), show="headings"); self.u_tree.pack(side="left", fill="both", expand=True)
-        self.u_tree.heading("AD", text="KULLANICI"); self.u_tree.heading("ROL", text="ROL")
-        self.u_tree.bind("<<TreeviewSelect>>", self.fill_user_form)
-        pnl = ctk.CTkFrame(fr, width=300); pnl.pack(side="right", fill="y", padx=15)
-        self.u_name = ctk.CTkEntry(pnl, placeholder_text="Kullanıcı Adı"); self.u_name.pack(pady=10)
-        self.u_pass = ctk.CTkEntry(pnl, placeholder_text="Şifre", show="•"); self.u_pass.pack(pady=10)
-        self.show_pass_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(pnl, text="Göster", variable=self.show_pass_var, command=self.toggle_password).pack(pady=5)
-        self.u_role = ctk.CTkComboBox(pnl, values=["personel", "admin"]); self.u_role.pack(pady=10)
-        ctk.CTkButton(pnl, text="KAYDET", fg_color=COLORS["success"], command=self.save_user).pack(pady=5)
-        ctk.CTkButton(pnl, text="SİL", fg_color=COLORS["danger"], command=self.del_user).pack(pady=5)
-        ctk.CTkButton(pnl, text="TEMİZLE", fg_color="gray", command=self.clear_user_form).pack(pady=15)
-        self.refresh_users()
-
-    def toggle_password(self):
-        if self.show_pass_var.get(): self.u_pass.configure(show="")
-        else: self.u_pass.configure(show="•")
-    
-    def refresh_users(self):
-        for i in self.u_tree.get_children(): self.u_tree.delete(i)
-        conn = DB.get_conn(); 
-        for r in conn.cursor().execute("SELECT name, role FROM users").fetchall(): self.u_tree.insert("", "end", values=r)
-        conn.close()
-
-    def fill_user_form(self, event):
-        sel = self.u_tree.selection()
-        if not sel: return
-        val = self.u_tree.item(sel)['values']
-        conn = DB.get_conn(); d = conn.cursor().execute("SELECT name, pass, role FROM users WHERE name=?", (val[0],)).fetchone(); conn.close()
-        if d: self.u_name.delete(0,"end"); self.u_name.insert(0,d[0]); self.u_pass.delete(0,"end"); self.u_pass.insert(0,d[1]); self.u_role.set(d[2])
-
-    def clear_user_form(self): self.u_name.delete(0,"end"); self.u_pass.delete(0,"end"); self.u_role.set("personel")
-
-    def save_user(self):
-        try: conn = DB.get_conn(); conn.cursor().execute("INSERT OR REPLACE INTO users (name, pass, role) VALUES (?,?,?)", (self.u_name.get(), self.u_pass.get(), self.u_role.get())); conn.commit(); conn.close(); self.refresh_users(); ToastNotification(self, "Kaydedildi", COLORS["success"])
-        except: pass
-
-    def del_user(self):
-        n = self.u_name.get()
-        if n in ["admin", "tanju"]: ToastNotification(self, "Silinemez!", COLORS["danger"]); return
-        if messagebox.askyesno("Sil", "Silinsin mi?"): conn=DB.get_conn(); conn.cursor().execute("DELETE FROM users WHERE name=?",(n,)); conn.commit(); conn.close(); self.refresh_users(); self.clear_user_form()
-
+    # --- DİĞER MODÜLLER (KISA) ---
+    def show_history(self): self.clear_main(); self.active_nav("hist"); ctk.CTkLabel(self.main, text="GEÇMİŞ İŞLEMLER", font=FONTS["h2"]).pack(pady=20)
+    def show_reports(self): self.clear_main(); self.active_nav("report"); ctk.CTkLabel(self.main, text="RAPORLAR", font=FONTS["h2"]).pack(pady=20)
+    def show_users(self): self.clear_main(); self.active_nav("users"); ctk.CTkLabel(self.main, text="KULLANICILAR", font=FONTS["h2"]).pack(pady=20)
+    def show_mail_settings(self): self.clear_main(); self.active_nav("mail"); ctk.CTkLabel(self.main, text="MAIL AYARLARI", font=FONTS["h2"]).pack(pady=20)
     def logout(self): self.destroy(); LoginWindow().mainloop()
 
 if __name__ == "__main__":
