@@ -42,7 +42,6 @@ APP_VERSION = "v14.6 TURKISH EDITION"
 
 # GÜNCELLEME LİNKLERİ
 UPDATE_URL = "https://raw.githubusercontent.com/ledoo75/StokTakip/refs/heads/main/main.py"
-EXE_UPDATE_URL = "https://github.com/ledoo75/StokTakip/raw/main/TanjuPaletPro.exe" 
 
 DEFAULT_DEPOTS = ["ANTREPO", "ANTREPO 2", "ZAFER", "KARE 6"]
 
